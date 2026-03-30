@@ -1,0 +1,40 @@
+{
+  "@context": {
+    "@vocab": "https://schema.org/",
+    "@base": "https://www.hedenus.de/sphaera/references"
+  },
+  "@graph": [
+    {
+      "@id": "aratos-sphaeren",
+      "@type": "ImageObject",
+      "name": "Illustration der Himmelsphären aus einer Aratos-Handschrift",
+      "description": "Die Erde in der Mitte wird von Mond, Sonne und den Planeten umkreist. Der rote Ring zeigt die Tierkreiszeichen und die Monate.",
+      "datePublished": "10. Jahrhundert",
+      "creditText": "Bibliothèque des Annonciades de Boulogne-sur-Mer, Ms. 188",
+      "pagination": "f.30",
+      "contentUrl": "rsc/images/621606201_MS0188_0035_3000x2370.jpg",
+      "contentLocation": {
+        "@type": "Place",
+        "name": "Bibliothèque des Annonciades, Boulogne-sur-Mer, Frankreich"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "ARCA - Bibliothèque numérique de l'IRHT (CNRS)"
+      },
+      "provider": {
+        "@type": "Organization",
+        "name": "IRHT (Institut de Recherche und d'Histoire des Textes)"
+      },
+      "license": "https://creativecommons.org/licenses/by-nc/3.0/deed.fr",
+      "copyrightNotice": "Œuvre du domaine public : libre de droits",
+      "isPartOf": {
+        "@type": "ArchiveComponent",
+        "name": "Boulogne-sur-Mer, Bibliothèque des Annonciades, 188",
+        "alternateName": "Calendarium ; GERMANICUS, Aratea",
+        "identifier": "ark:/63955/md10js956g67",
+        "url": "https://arca.irht.cnrs.fr/ark:/63955/md10js956g67"
+      }
+    }
+  ]
+}
+

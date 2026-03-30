@@ -1,5 +1,5 @@
 #  dependencies
 rdflib>=7.6.0
-yaml-ld
+
 
 #requests
