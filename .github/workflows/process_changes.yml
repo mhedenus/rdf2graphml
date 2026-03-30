@@ -17,7 +17,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v47
         with:
           # Optional: Filter auf bestimmte Dateitypen, z.B. nur .txt oder .md
           files: |
@@ -39,4 +39,7 @@ jobs:
         env:
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          python process.py $ALL_CHANGED_FILES
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "processing: $file"
+            python process.py "$file"
+          done
