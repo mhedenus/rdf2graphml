@@ -5,8 +5,8 @@
   },
   "@graph": [
     {
-      "@id": "aratos-sphaeren",
-      "@type": "ImageObject"
+      "@id": "p1",
+      "@type": "Person"
     }
   ]
 }
