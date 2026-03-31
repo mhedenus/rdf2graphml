@@ -43,10 +43,7 @@ jobs:
 
       - name: ⚙️ Konvertierung durchführen
         run: |
-          rdf2graphml "${{ inputs.rdf_dir }}/generated.graphml" \
-            --config graphml-config.json \
-            -v \
-            ${{ inputs.rdf_dir }}/*
+          rdf2graphml -v --config graphml-config.json "${{ inputs.rdf_dir }}/generated.graphml" ${{ inputs.rdf_dir }}/*
 
       - name: 🚀 Ergebnis einchecken (Commit & Push)
         uses: stefanzweifel/git-auto-commit-action@v5
