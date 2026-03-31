@@ -10,10 +10,14 @@
     rdfs:label "Alice" ;
     rdfs:label "Adelheid"@de ;
     foaf:mbox <mailto:alice@example.org>, <mailto:a@b.org>  ;
-    foaf:img "rsc/alice.png" ;
-    <geheimesProperty1> "GEHEIM!" .
+    foaf:img "images/alice.png" ;
+    <geheimesProperty1> "GEHEIM!" ;
+    <arbeitetMit> <x> .
 
-<b> a foaf:Person ; a <Servant> ;
+<x> a <System> ;
+    rdfs:label "System X" .
+
+<b> a foaf:Person ;
     rdfs:label "Bob" ;
     foaf:mbox <mailto:bob@example.org> ;
     foaf:knows <a> .

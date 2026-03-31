@@ -8,7 +8,7 @@
   "include_types": [],
   "exclude_types": [
     "http://www.w3.org/2002/07/owl#NamedIndividual",
-    "http://example.org/InternerTyp*"
+    "http://example.org/System"
   ],
   "entity_property_uris": [
     "https://schema.org/url",
@@ -20,8 +20,9 @@
     "http://xmlns.com/foaf/0.1/img"
   ],
   "type_styles": {
-    "http://example.org/Servant": {
+    "http://example.org/System": {
       "color": "#FF6666",
+      "shape": "parallelogram",
       "priority": 10
     },
     "http://xmlns.com/foaf/0.1/Person": {

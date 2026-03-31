@@ -13,7 +13,7 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 # --- Cache Konfiguration ---
-CACHE_DIR = Path(".yed_image_cache")
+CACHE_DIR = Path("../../.yed_image_cache")
 
 
 def _init_cache():

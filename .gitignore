@@ -1,2 +1,63 @@
-target
-.yed_image_cache
+# --- Python Basics ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+
+# --- Paket-Metadaten (Egg-Info) ---
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# --- Virtuelle Umgebungen ---
+# Wir ignorieren alle gängigen Namen für venvs
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Projekt-spezifische Dateien ---
+target/
+.yed_image_cache/
+
+# Falls du lokale Test-Outputs generierst, die nicht ins Repo sollen:
+# *.graphml
+# Ausnahme: Wenn die "generated.graphml" Teil des Repos sein soll (wie in der GitHub Action), 
+# dann lass die Zeile oben auskommentiert oder lösche sie.
+
+# --- IDE Einstellungen ---
+# PyCharm / IntelliJ
+.idea/
+
+# VS Code
+.vscode/
+.env
+.history/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# --- Betriebssystem-Müll ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Log-Dateien ---
+*.log

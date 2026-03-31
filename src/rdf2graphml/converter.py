@@ -2,7 +2,7 @@ import xml.etree.ElementTree as ET
 import logging
 from rdflib import Literal, URIRef, BNode
 from rdflib.namespace import RDFS, RDF
-from image_loader import load_image_as_base64
+from .image_loader import load_image_as_base64
 
 logger = logging.getLogger(__name__)
 
