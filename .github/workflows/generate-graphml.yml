@@ -46,11 +46,7 @@ jobs:
           rdf2graphml "${{ inputs.rdf_dir }}/generated.graphml" \
             --config graphml-config.json \
             -v \
-            ${{ inputs.rdf_dir }}/*.ttl \
-            ${{ inputs.rdf_dir }}/*.json \
-            ${{ inputs.rdf_dir }}/*.jsonld \
-            ${{ inputs.rdf_dir }}/*.owl \
-            ${{ inputs.rdf_dir }}/*.nt || echo "Keine passenden RDF-Dateien gefunden"
+            ${{ inputs.rdf_dir }}/*.ttl
 
       - name: 🚀 Ergebnis einchecken (Commit & Push)
         uses: stefanzweifel/git-auto-commit-action@v5
