@@ -1,0 +1,18 @@
+@base <http://example.org/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rel: <http://www.perceive.net/schemas/relationship/> .
+
+
+<a> a foaf:Person;
+    rdfs:label "Heidi"@de ;
+    rdfs:label "Alice" ;
+    rdfs:label "Adelheid"@de ;
+    foaf:mbox <mailto:alice@example.org>, <mailto:a@b.org>  ;
+    foaf:img "rsc/alice.png" .
+
+<b> a foaf:Person ; a <Servant> ;
+    rdfs:label "Bob" ;
+    foaf:mbox <mailto:bob@example.org> ;
+    foaf:knows <a> .

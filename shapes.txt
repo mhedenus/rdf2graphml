@@ -1,0 +1,21 @@
+rectangle (Einfaches Rechteck)
+
+roundrectangle (Rechteck mit abgerundeten Ecken – das ist unser Standard-Fallback)
+
+ellipse (Kreis oder Oval)
+
+parallelogram (Parallelogramm)
+
+hexagon (Sechseck)
+
+triangle (Dreieck)
+
+rectangle3d (Rechteck mit einem angedeuteten 3D-Rand)
+
+octagon (Achteck)
+
+diamond (Raute)
+
+trapezoid (Trapez, unten breiter als oben)
+
+trapezoid2 (Auf den Kopf gestelltes Trapez, oben breiter als unten)

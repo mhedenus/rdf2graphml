@@ -1,5 +1,2 @@
-#  dependencies
-rdflib>=7.6.0
-
-
-#requests
+rdflib>=6.0.0
+Pillow>=10.0.0

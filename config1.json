@@ -1,0 +1,24 @@
+{
+  "preferred_language": "de",
+  "icon_target_height": 46,
+  "entity_property_uris": [
+    "https://schema.org/url",
+    "http://xmlns.com/foaf/0.1/mbox",
+    "http://xmlns.com/foaf/0.1/depiction",
+    "http://xmlns.com/foaf/0.1/homepage"
+  ],
+  "icon_property_uris": [
+    "http://xmlns.com/foaf/0.1/img"
+  ],
+  "type_styles": {
+    "http://example.org/Servant": {
+      "color": "#FF6666",
+      "priority": 10
+    },
+    "http://xmlns.com/foaf/0.1/Person": {
+      "color": "#66FF66",
+      "shape": "ellipse",
+      "priority": 20
+    }
+  }
+}
