@@ -24,7 +24,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# WICHTIG: Das hier erzeugt den Konsolen-Befehl "rdf2graphml"
 [project.scripts]
 rdf2graphml = "rdf2graphml.cli:main"
 
