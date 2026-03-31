@@ -1,5 +1,6 @@
 import json
 import logging
+import fnmatch  # NEU: Für Wildcard-Matching
 from rdflib import URIRef
 from pathlib import Path
 
@@ -8,38 +9,90 @@ logger = logging.getLogger(__name__)
 
 class ConverterConfig:
     def __init__(self, entity_property_uris=None, icon_property_uris=None, type_styles=None,
-                 icon_target_height=64, preferred_language="de", image_base_dir=None):
+                 icon_target_height=64, preferred_language="de", image_base_dir=None,
+                 include_predicates=None, exclude_predicates=None,
+                 include_types=None, exclude_types=None):
+
         self.entity_property_uris = set(entity_property_uris) if entity_property_uris else set()
         self.icon_property_uris = set(icon_property_uris) if icon_property_uris else set()
         self.type_styles = type_styles if type_styles else {}
         self.icon_target_height = icon_target_height
         self.preferred_language = preferred_language
-        # NEU: Der Basis-Pfad für lokale Bilder
         self.image_base_dir = Path(image_base_dir) if image_base_dir else Path.cwd()
+
+        # Filter-Listen
+        self.include_predicates = include_predicates if include_predicates else []
+        self.exclude_predicates = exclude_predicates if exclude_predicates else []
+        self.include_types = include_types if include_types else []
+        self.exclude_types = exclude_types if exclude_types else []
+
+    def _is_uri_allowed(self, uri, includes, excludes):
+        """Generische Methode zum Prüfen von URIs gegen Wildcards."""
+        uri_str = str(uri)
+
+        # 1. Blacklist hat Vorrang
+        for pattern in excludes:
+            if fnmatch.fnmatch(uri_str, pattern):
+                return False
+
+        # 2. Wenn keine Whitelist existiert, ist alles erlaubt
+        if not includes:
+            return True
+
+        # 3. Whitelist prüfen
+        for pattern in includes:
+            if fnmatch.fnmatch(uri_str, pattern):
+                return True
+
+        return False
+
+    def is_predicate_allowed(self, predicate_uri):
+        return self._is_uri_allowed(predicate_uri, self.include_predicates, self.exclude_predicates)
+
+    def is_type_allowed(self, type_uri):
+        # NEU: Nutzt dieselbe Logik für rdf:type
+        return self._is_uri_allowed(type_uri, self.include_types, self.exclude_types)
 
     @classmethod
     def from_json(cls, file_path):
-        try:
-            config_path = Path(file_path).resolve()
-            with open(config_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
+        config_path = Path(file_path).resolve()
+        with open(config_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
 
-            # NEU: Berechne den Basis-Pfad.
-            # Standardmäßig ist das der Ordner, in dem die config.json liegt.
-            # Wenn der User in der JSON "image_base_dir": "pfad/zu/bildern" angibt,
-            # wird dieser relativ zur config.json aufgelöst.
-            base_dir = config_path.parent
-            if "image_base_dir" in data:
-                base_dir = (config_path.parent / data["image_base_dir"]).resolve()
+        base_dir = config_path.parent
+        if "image_base_dir" in data:
+            base_dir = (config_path.parent / data["image_base_dir"]).resolve()
 
-            return cls(
-                entity_property_uris={URIRef(u) for u in data.get("entity_property_uris", [])},
-                icon_property_uris={URIRef(u) for u in data.get("icon_property_uris", [])},
-                type_styles={URIRef(k): v for k, v in data.get("type_styles", {}).items()},
-                icon_target_height=data.get("icon_target_height", 64),
-                preferred_language=data.get("preferred_language", "de"),
-                image_base_dir=base_dir  # Übergebe den berechneten Pfad
-            )
-        except Exception as e:
-            logger.error(f"Fehler beim Laden der Konfigurationsdatei: {e}")
-            raise
+        return cls(
+            entity_property_uris={URIRef(u) for u in data.get("entity_property_uris", [])},
+            icon_property_uris={URIRef(u) for u in data.get("icon_property_uris", [])},
+            type_styles={URIRef(k): v for k, v in data.get("type_styles", {}).items()},
+            icon_target_height=data.get("icon_target_height", 64),
+            preferred_language=data.get("preferred_language", "de"),
+            image_base_dir=base_dir,
+            include_predicates=data.get("include_predicates", []),
+            exclude_predicates=data.get("exclude_predicates", []),
+            include_types=data.get("include_types", []),  # NEU
+            exclude_types=data.get("exclude_types", [])  # NEU
+        )
+
+    @classmethod
+    def from_json(cls, file_path):
+        config_path = Path(file_path).resolve()
+        with open(config_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        base_dir = config_path.parent
+        if "image_base_dir" in data:
+            base_dir = (config_path.parent / data["image_base_dir"]).resolve()
+
+        return cls(
+            entity_property_uris={URIRef(u) for u in data.get("entity_property_uris", [])},
+            icon_property_uris={URIRef(u) for u in data.get("icon_property_uris", [])},
+            type_styles={URIRef(k): v for k, v in data.get("type_styles", {}).items()},
+            icon_target_height=data.get("icon_target_height", 64),
+            preferred_language=data.get("preferred_language", "de"),
+            image_base_dir=base_dir,
+            include_predicates=data.get("include_predicates", []),  # NEU
+            exclude_predicates=data.get("exclude_predicates", [])  # NEU
+        )

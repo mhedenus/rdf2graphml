@@ -6,7 +6,7 @@ on:
       rdf_dir:
         description: 'Verzeichnis mit den RDF-Dateien'
         required: true
-        default: 'rdf_data' # Dein Standard-Verzeichnis
+        default: 'data' # Dein Standard-Verzeichnis
         type: string
 
 permissions:

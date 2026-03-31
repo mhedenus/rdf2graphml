@@ -1,6 +1,15 @@
 {
   "preferred_language": "de",
   "icon_target_height": 46,
+  "include_predicates": [],
+  "exclude_predicates": [
+    "http://example.org/geheimesProperty*"
+  ],
+  "include_types": [],
+  "exclude_types": [
+    "http://www.w3.org/2002/07/owl#NamedIndividual",
+    "http://example.org/InternerTyp*"
+  ],
   "entity_property_uris": [
     "https://schema.org/url",
     "http://xmlns.com/foaf/0.1/mbox",

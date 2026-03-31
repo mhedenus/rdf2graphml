@@ -100,9 +100,10 @@ def _scale_and_encode(image_bytes, target_height):
         return None, None
 
 
-def load_image_as_base64(source, is_local=False, target_height=64):
+def load_image_as_base64(source, is_local=False, target_height=64, base_dir=None):
     """
     Hauptfunktion: Lädt Bild (mit Cache, Backoff und Cookies), skaliert es und encodiert es.
+    Wenn is_local=True, wird source relativ zu base_dir aufgelöst.
     """
     _init_cache()
 
@@ -122,13 +123,18 @@ def load_image_as_base64(source, is_local=False, target_height=64):
     # 2. Bild laden (Lokal oder via Download)
     if is_local:
         path = Path(source)
+
+        # Den base_dir vor den Pfad hängen, falls es ein relativer Pfad ist
+        if base_dir and not path.is_absolute():
+            path = Path(base_dir) / path
+
         if not path.exists():
-            logger.warning(f"Lokale Bild-Datei nicht gefunden: {source}")
+            logger.warning(f"Lokale Bild-Datei nicht gefunden: {path}")
             return None, None
         try:
             image_data = path.read_bytes()
         except Exception as e:
-            logger.error(f"Fehler beim Lesen der lokalen Datei {source}: {e}")
+            logger.error(f"Fehler beim Lesen der lokalen Datei {path}: {e}")
             return None, None
     else:
         image_data = _download_with_backoff(source, max_wait=20)

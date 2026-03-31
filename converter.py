@@ -1,9 +1,7 @@
-import logging
 import xml.etree.ElementTree as ET
-
-from rdflib import Literal, BNode
+import logging
+from rdflib import Literal, URIRef, BNode
 from rdflib.namespace import RDFS, RDF
-
 from image_loader import load_image_as_base64
 
 logger = logging.getLogger(__name__)
@@ -20,7 +18,7 @@ class RDFToYedConverter:
         self.all_attribute_keys = set()
         self.edge_counter = 0
 
-        self.node_display_labels_raw = {}  # Speichert (Text, Language) für die Anzeigelogik
+        self.node_display_labels_raw = {}
         self.node_comments = {}
         self.node_icons = {}
         self.image_resources = {}
@@ -41,70 +39,79 @@ class RDFToYedConverter:
 
     def _pass_1_collect_data(self, rdf_graph):
         self.nodes_forced_as_attributes = set()
+
+        # 1. Filter anwenden: Nur erlaubte Tripel in die Verarbeitung aufnehmen
+        allowed_triples = []
         for s, p, o in rdf_graph:
+            is_structural = (p == RDF.type or p == RDFS.label or p == RDFS.comment or
+                             p in self.config.icon_property_uris)
+
+            # Prädikate filtern
+            if not is_structural and not self.config.is_predicate_allowed(p):
+                continue
+
+            # Typen filtern
+            if p == RDF.type and not self.config.is_type_allowed(o):
+                continue
+
+            allowed_triples.append((s, p, o))
+
+        # 2. Strukturelle Daten aus den gefilterten Tripeln sammeln
+        for s, p, o in allowed_triples:
             if p in self.config.entity_property_uris or p in self.config.icon_property_uris or p == RDF.type:
                 self.nodes_forced_as_attributes.add(o)
 
-            # Label speziell für das visuelle NodeLabel speichern
             if p == RDFS.label and isinstance(o, Literal):
                 if s not in self.node_display_labels_raw:
                     self.node_display_labels_raw[s] = []
                 self.node_display_labels_raw[s].append((str(o), o.language))
-
             elif p == RDFS.comment:
                 self.node_comments[s] = str(o)
             elif p in self.config.icon_property_uris:
                 new_icon = {"source": str(o), "is_local": isinstance(o, Literal)}
-
-                if s not in self.node_icons:
-                    # Noch kein Icon da -> einfach eintragen
+                if s not in self.node_icons or new_icon["source"] < self.node_icons[s]["source"]:
                     self.node_icons[s] = new_icon
-                else:
-                    # Schon ein Icon da -> deterministische Auswahl (alphabetisch das "kleinere" gewinnt)
-                    if new_icon["source"] < self.node_icons[s]["source"]:
-                        self.node_icons[s] = new_icon
             elif p == RDF.type:
                 if s not in self.node_types: self.node_types[s] = []
                 self.node_types[s].append(o)
 
-        for s, p, o in rdf_graph:
-            if s not in self.nodes_forced_as_attributes: self.nodes_to_draw.add(s)
+        # 3. Attribute und Knoten zum Zeichnen ermitteln
+        for s, p, o in allowed_triples:
+            if s not in self.nodes_forced_as_attributes:
+                self.nodes_to_draw.add(s)
 
-            # WICHTIG: RDFS.label ist NICHT mehr in dieser Ausschluss-Liste,
-            # es wird also als ganz normales Attribut mitgespeichert!
             if p == RDFS.comment or p in self.config.icon_property_uris:
                 continue
 
             if isinstance(o, Literal) or p in self.config.entity_property_uris or p == RDF.type:
-                if s not in self.node_attributes: self.node_attributes[s] = {}
+                if s not in self.node_attributes:
+                    self.node_attributes[s] = {}
                 p_str = str(p)
                 self.all_attribute_keys.add(p_str)
-                if p_str not in self.node_attributes[s]: self.node_attributes[s][p_str] = []
-                # Fallback für Literale, falls sie eine Sprache haben, hängen wir sie hier im Attribut optional an
+                if p_str not in self.node_attributes[s]:
+                    self.node_attributes[s][p_str] = []
+
                 val_str = f"{o} (@{o.language})" if getattr(o, "language", None) else str(o)
                 self.node_attributes[s][p_str].append(val_str)
             elif o not in self.nodes_forced_as_attributes:
                 self.nodes_to_draw.add(o)
 
     def _get_display_label(self, node):
-        """Ermittelt das anzuzeigende Label basierend auf der Sprach-Konfiguration."""
+        """Ermittelt das deterministische Anzeigelabel basierend auf Sprache."""
         labels = self.node_display_labels_raw.get(node, [])
         if not labels:
-            return "Anonymous"  # Regel: Kein rdfs:label -> "Anonymous"
+            return "Anonymous"
 
         pref_lang = self.config.preferred_language
 
-        # Regel: Bevorzugte Sprache
         pref_labels = [text for text, lang in labels if lang == pref_lang]
         if pref_labels:
-            return sorted(pref_labels)[0]  # Regel: Alphabetisch sortiert das erste
+            return sorted(pref_labels)[0]
 
-        # Regel: Kein Sprachattribut
         no_lang_labels = [text for text, lang in labels if not lang]
         if no_lang_labels:
             return sorted(no_lang_labels)[0]
 
-        # Fallback: Irgendein Label nehmen, alphabetisch sortiert
         return sorted([text for text, lang in labels])[0]
 
     def _fetch_images(self):
@@ -115,13 +122,17 @@ class RDFToYedConverter:
             if src not in seen_sources:
                 logger.info(f"Verarbeite Bild: {src}")
 
-                # Das Ergebnis erst auffangen und prüfen, bevor wir es auspacken
-                result = load_image_as_base64(src, icon_data["is_local"], self.config.icon_target_height)
+                # Defensives Entpacken inklusive Config-Base-Dir
+                result = load_image_as_base64(
+                    src,
+                    icon_data["is_local"],
+                    self.config.icon_target_height,
+                    self.config.image_base_dir
+                )
 
-                # Sicherstellen, dass das Ergebnis existiert und wirklich ein 2-teiliges Tupel ist
                 if result and isinstance(result, tuple) and len(result) == 2:
                     b64, width = result
-                    if b64:
+                    if b64 and width:
                         seen_sources[src] = {"id": resource_id, "base64": b64, "width": width}
                         resource_id += 1
                 else:
@@ -148,22 +159,22 @@ class RDFToYedConverter:
         return mapping
 
     def _pass_2_build_graph(self, rdf_graph, attr_map):
-        # 1. KNOTEN DETERMINISTISCH ZEICHNEN (sorted!)
+        # 1. KNOTEN DETERMINISTISCH ZEICHNEN
         for node in sorted(self.nodes_to_draw):
             n_id = str(node)
             node_elem = ET.SubElement(self.graph_element, "node", id=n_id)
             ET.SubElement(node_elem, "data", key="d_url").text = n_id
+
+            # HTML Tooltip für Kommentare
             if node in self.node_comments:
                 comment_text = self.node_comments[node]
-                # HTML-Wrapper, damit yEd den Tooltip schön formatiert und Zeilen umbricht
                 html_tooltip = f"<html><body style='width: 250px;'>{comment_text}</body></html>"
                 ET.SubElement(node_elem, "data", key="d_desc").text = html_tooltip
 
             if node in self.node_attributes:
-                # Auch die Attribute deterministisch iterieren
+                # Determinismus für Attribute
                 for p_uri in sorted(self.node_attributes[node].keys()):
                     vals = self.node_attributes[node][p_uri]
-                    # Mehrfachwerte deterministisch aneinanderreihen
                     ET.SubElement(node_elem, "data", key=attr_map[p_uri]).text = ", ".join(sorted(vals))
 
             data_g = ET.SubElement(node_elem, "data", key="d_ng")
@@ -189,6 +200,7 @@ class RDFToYedConverter:
                 if isinstance(node, BNode):
                     color, shape, disp_label = "#C0C0C0", "ellipse", ""
 
+                # Multi-Type Prioritäten deterministisch verarbeiten
                 available_types = sorted(self.node_types.get(node, []), key=str)
                 best_style, best_priority = None, -1
 
@@ -215,17 +227,18 @@ class RDFToYedConverter:
             if s in self.nodes_to_draw and o in self.nodes_to_draw and not isinstance(o, Literal) \
                     and p not in (RDFS.comment, RDF.type) and p not in self.config.entity_property_uris \
                     and p not in self.config.icon_property_uris:
-                # Wir konvertieren alles in Strings, damit wir es sauber sortieren können
-                edges_to_draw.append((str(s), str(p), str(o)))
 
-        # Jetzt sortieren wir die Kanten nach Quelle, Prädikat und Ziel
+                # Kanten durch den Filter jagen
+                if self.config.is_predicate_allowed(p):
+                    edges_to_draw.append((str(s), str(p), str(o)))
+
+        # Kanten deterministisch nach String-Wert sortieren
         for s_str, p_str, o_str in sorted(edges_to_draw):
             edge = ET.SubElement(self.graph_element, "edge", id=f"e{self.edge_counter}", source=s_str, target=o_str)
             self.edge_counter += 1
             poly = ET.SubElement(ET.SubElement(edge, "data", key="d_eg"),
                                  "{http://www.yworks.com/xml/graphml}PolyLineEdge")
 
-            # Kantenbeschriftung extrahieren
             edge_label = p_str.split("/")[-1].split("#")[-1] or "link"
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}EdgeLabel").text = edge_label
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}Arrows", source="none", target="standard")
@@ -235,6 +248,8 @@ class RDFToYedConverter:
         self._fetch_images()
         attr_map = self._setup_graphml_keys()
         self._pass_2_build_graph(rdf_graph, attr_map)
+
+        # Base64 Ressourcen einbetten
         if self.image_resources:
             res_data = ET.SubElement(self.root, "data", key="d_res")
             y_res = ET.SubElement(res_data, "{http://www.yworks.com/xml/graphml}Resources")
@@ -246,5 +261,6 @@ class RDFToYedConverter:
     def save(self, path):
         tree = ET.ElementTree(self.root)
         ET.register_namespace('y', 'http://www.yworks.com/xml/graphml')
-        if hasattr(ET, "indent"): ET.indent(tree, space="  ")
+        if hasattr(ET, "indent"):
+            ET.indent(tree, space="  ")
         tree.write(path, encoding="utf-8", xml_declaration=True)
