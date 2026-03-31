@@ -1,0 +1,54 @@
+name: Generate GraphML from RDF
+
+on:
+  workflow_dispatch:
+    inputs:
+      rdf_dir:
+        description: 'Verzeichnis mit den RDF-Dateien'
+        required: true
+        default: 'rdf_data' # Dein Standard-Verzeichnis
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  convert-and-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: 💾 Bild-Cache für Flaticon/Flickr wiederherstellen
+        uses: actions/cache@v4
+        with:
+          path: .yed_image_cache
+          key: yed-image-cache-${{ github.run_id }}
+          restore-keys: |
+            yed-image-cache-
+
+      - name: 🐍 Python einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📦 Abhängigkeiten installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: ⚙️ Konvertierung durchführen
+        run: |
+          # Zielpfad: input-verzeichnis/generated.graphml
+          python main.py ${{ inputs.rdf_dir }}/generated.graphml graphml-config.json ${{ inputs.rdf_dir }}/*
+
+      - name: 🚀 Ergebnis einchecken (Commit & Push)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(graph): Auto-update generated.graphml in ${{ inputs.rdf_dir }}"
+          # Git sucht jetzt im Zielverzeichnis nach der geänderten Datei
+          file_pattern: '${{ inputs.rdf_dir }}/generated.graphml'
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
