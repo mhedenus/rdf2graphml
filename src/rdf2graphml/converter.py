@@ -1,7 +1,7 @@
 import logging
 import xml.etree.ElementTree as ET
 
-from rdflib import Literal, BNode
+from rdflib import Literal, BNode, URIRef
 from rdflib.namespace import RDFS, RDF
 
 from .icon_loader import load_icon_as_base64
@@ -60,7 +60,9 @@ class RDFToYedConverter:
 
         # 2. Collect structural data from filtered triples
         for s, p, o in allowed_triples:
-            if p in self.config.node_properties or p in self.config.icon_locators or p == RDF.type:
+            # RDF.type nur dann als Attribut erzwingen, wenn type_as_edge False ist
+            if p in self.config.node_properties or p in self.config.icon_locators or (
+                    p == RDF.type and not self.config.type_as_edge):
                 self.nodes_forced_as_attributes.add(o)
 
             if p == RDFS.label and isinstance(o, Literal):
@@ -74,6 +76,7 @@ class RDFToYedConverter:
                 if s not in self.node_icons or new_icon["source"] < self.node_icons[s]["source"]:
                     self.node_icons[s] = new_icon
             elif p == RDF.type:
+                # Die Typen für das Styling (type_styles) erfassen wir weiterhin immer
                 if s not in self.node_types: self.node_types[s] = []
                 self.node_types[s].append(o)
 
@@ -85,7 +88,9 @@ class RDFToYedConverter:
             if p == RDFS.comment or p in self.config.icon_locators:
                 continue
 
-            if isinstance(o, Literal) or p in self.config.node_properties or p == RDF.type:
+            # RDF.type nur dann als Text-Attribut auflisten, wenn type_as_edge False ist
+            if isinstance(o, Literal) or p in self.config.node_properties or (
+                    p == RDF.type and not self.config.type_as_edge):
                 if s not in self.node_attributes:
                     self.node_attributes[s] = {}
                 p_str = str(p)
@@ -131,7 +136,7 @@ class RDFToYedConverter:
                 result = load_icon_as_base64(
                     src,
                     icon_data["is_local"],
-                    self.config.icon_target_height,
+                    self.config.icon_height,
                     self.config.image_base_dir
                 )
 
@@ -194,7 +199,7 @@ class RDFToYedConverter:
                 img_node = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ImageNode")
 
                 ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}Geometry",
-                              height=str(self.config.icon_target_height),
+                              height=str(self.config.icon_height),
                               width=str(img_data["width"]))
 
                 ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
@@ -230,10 +235,14 @@ class RDFToYedConverter:
         # 2. COLLECT AND DRAW EDGES DETERMINISTICALLY
         edges_to_draw = []
         for s, p, o in rdf_graph:
-            if s in self.nodes_to_draw and o in self.nodes_to_draw and not isinstance(o, Literal) \
-                    and p not in (RDFS.comment, RDF.type) and p not in self.config.node_properties \
-                    and p not in self.config.icon_locators:
+            is_valid_edge_pred = True
+            if p == RDFS.comment: is_valid_edge_pred = False
+            if p == RDF.type and not self.config.type_as_edge: is_valid_edge_pred = False
+            if p in self.config.node_properties: is_valid_edge_pred = False
+            if p in self.config.icon_locators: is_valid_edge_pred = False
 
+            if s in self.nodes_to_draw and o in self.nodes_to_draw and not isinstance(o,
+                                                                                      Literal) and is_valid_edge_pred:
                 # Run edges through the filter
                 if self.config.is_predicate_allowed(p):
                     edges_to_draw.append((str(s), str(p), str(o)))
@@ -245,9 +254,22 @@ class RDFToYedConverter:
             poly = ET.SubElement(ET.SubElement(edge, "data", key="d_eg"),
                                  "{http://www.yworks.com/xml/graphml}PolyLineEdge")
 
+            # --- Edge Styling ---
+            p_uri = URIRef(p_str)
+            edge_style = self.config.edge_styles.get(p_uri, {})
+
+            color = edge_style.get("color", "#000000")
+            line_type = edge_style.get("line_type", "line")
+            target_arrow = edge_style.get("target_arrow", "standard")
+
+            ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}LineStyle",
+                          color=color, type=line_type, width="1.0")
+            ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}Arrows",
+                          source="none", target=target_arrow)
+            # --------------------
+
             edge_label = p_str.split("/")[-1].split("#")[-1] or "link"
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}EdgeLabel").text = edge_label
-            ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}Arrows", source="none", target="standard")
 
     def convert(self, rdf_graph):
         self._pass_1_collect_data(rdf_graph)

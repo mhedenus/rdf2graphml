@@ -8,15 +8,18 @@ logger = logging.getLogger(__name__)
 
 
 class ConverterConfig:
-    def __init__(self, node_properties=None, icon_locators=None, type_styles=None,
+    def __init__(self, node_properties=None, icon_locators=None, type_styles=None, edge_styles=None,
+                 type_as_edge=False,
                  icon_height=64, preferred_language="de", base_dir=None,
                  include_predicates=None, exclude_predicates=None,
                  include_types=None, exclude_types=None):
 
+        self.type_as_edge = type_as_edge
         self.node_properties = set(node_properties) if node_properties else set()
         self.icon_locators = set(icon_locators) if icon_locators else set()
         self.type_styles = type_styles if type_styles else {}
-        self.icon_target_height = icon_height
+        self.edge_styles = edge_styles if edge_styles else {}  # NEU: Edge Styles
+        self.icon_height = icon_height
         self.preferred_language = preferred_language
         self.image_base_dir = Path(base_dir) if base_dir else Path.cwd()
 
@@ -59,12 +62,13 @@ class ConverterConfig:
             node_properties={URIRef(u) for u in data.get("node_properties", [])},
             icon_locators={URIRef(u) for u in data.get("icon_locators", [])},
             type_styles={URIRef(k): v for k, v in data.get("type_styles", {}).items()},
+            edge_styles={URIRef(k): v for k, v in data.get("edge_styles", {}).items()},
+            type_as_edge=data.get("type_as_edge", False),  # NEU: Aus JSON lesen
             icon_height=data.get("icon_height", 64),
             preferred_language=data.get("preferred_language", "de"),
             base_dir=base_dir,
             include_predicates=data.get("include_predicates", []),
             exclude_predicates=data.get("exclude_predicates", []),
-            # WICHTIG: Diese beiden Zeilen müssen existieren, sonst greift der Filter nie!
             include_types=data.get("include_types", []),
             exclude_types=data.get("exclude_types", [])
         )

@@ -35,6 +35,7 @@
             ]
         )
     ] ;
+   # rdfs:label "Domestic Cat" ;
     rdfs:label "Domestic Cat"@en .
 
 :WildCat a owl:Class ;

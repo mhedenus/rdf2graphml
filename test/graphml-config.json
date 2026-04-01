@@ -6,7 +6,6 @@
   ],
   "include_types": [],
   "exclude_types": [
-    "http://www.w3.org/2002/07/owl#NamedIndividual",
     "http://example.org/IgnoredType"
   ],
   "node_properties": [
@@ -19,7 +18,33 @@
   "icon_locators": [
     "http://xmlns.com/foaf/0.1/img"
   ],
+  "type_as_edge": true,
+  "edge_styles": {
+    "http://xmlns.com/foaf/0.1/knows": {
+      "color": "#FF0000"
+    },
+    "http://www.w3.org/2000/01/rdf-schema#subClassOf": {
+      "color": "#000000",
+      "line_type": "solid",
+      "target_arrow": "white_delta"
+    },
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "color": "#AA0000",
+      "line_type": "dashed",
+      "target_arrow": "transparent_circle"
+    }
+  },
   "type_styles": {
+    "http://www.w3.org/2002/07/owl#Restriction": {
+      "color": "#FF0000",
+      "shape": "triangle",
+      "priority": 10
+    },
+    "http://www.w3.org/2002/07/owl#Class": {
+      "color": "#AACCAA",
+      "shape": "rectangle",
+      "priority": 10
+    },
     "http://example.org/System": {
       "color": "#FF6666",
       "shape": "parallelogram",
