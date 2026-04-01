@@ -8,6 +8,11 @@ from .icon_loader import load_icon_as_base64
 
 logger = logging.getLogger(__name__)
 
+# --- Constants for RDF List processing ---
+LIST_NS_BASE = "https://www.hedenus.de/rdf2graphml/"
+LIST_NS_INDEX = f"{LIST_NS_BASE}index#"
+LIST_TYPE_URI = URIRef(f"{LIST_NS_BASE}List")
+
 
 class RDFToYedConverter:
     def __init__(self, config):
@@ -39,14 +44,61 @@ class RDFToYedConverter:
                 used_names[base_name] += 1
         return mapping
 
+    def _preprocess_lists(self, rdf_graph):
+        """
+        Sucht nach RDF-Listen, fasst sie in einem Knoten zusammen und
+        erstellt nummerierte Kanten zu den Listenelementen.
+        """
+        # Alle Knoten, die Teil der "Wirbelsäule" einer Liste sind (außer dem Kopf)
+        rest_objects = set(rdf_graph.objects(predicate=RDF.rest))
+
+        # Listen-Köpfe sind Knoten, die ein rdf:first haben, aber nicht Ziel eines rdf:rest sind
+        list_heads = set(rdf_graph.subjects(predicate=RDF.first)) - rest_objects
+
+        triples_to_remove = []
+        triples_to_add = []
+
+        for head in list_heads:
+            current = head
+            index = 1
+
+            while current and current != RDF.nil:
+                first_val = next(rdf_graph.objects(subject=current, predicate=RDF.first), None)
+                rest_val = next(rdf_graph.objects(subject=current, predicate=RDF.rest), None)
+
+                if first_val is not None:
+                    # Neue Kante vom Kopf zum Item
+                    triples_to_add.append((head, URIRef(f"{LIST_NS_INDEX}{index}"), first_val))
+                    index += 1
+
+                # Alte Listen-Struktur zum Löschen markieren
+                for p in (RDF.first, RDF.rest):
+                    for o in rdf_graph.objects(subject=current, predicate=p):
+                        triples_to_remove.append((current, p, o))
+
+                current = rest_val
+
+            # Dem Listen-Knoten einen Typ und ein Label geben, damit er gezeichnet und gestylt werden kann
+            triples_to_add.append((head, RDF.type, LIST_TYPE_URI))
+            triples_to_add.append((head, RDFS.label, Literal("List")))
+
+        # Graph mutieren
+        for t in triples_to_remove:
+            rdf_graph.remove(t)
+        for t in triples_to_add:
+            rdf_graph.add(t)
+
     def _pass_1_collect_data(self, rdf_graph):
         self.nodes_forced_as_attributes = set()
 
         # 1. Apply filter: Only process allowed triples
         allowed_triples = []
         for s, p, o in rdf_graph:
+            # Prüfen, ob es eine unserer generierten Listen-Kanten/Typen ist
+            is_list_generated = str(p).startswith(LIST_NS_BASE)
+
             is_structural = (p == RDF.type or p == RDFS.label or p == RDFS.comment or
-                             p in self.config.icon_locators)
+                             p in self.config.icon_locators or is_list_generated)
 
             # Filter predicates
             if not is_structural and not self.config.is_predicate_allowed(p):
@@ -243,8 +295,10 @@ class RDFToYedConverter:
 
             if s in self.nodes_to_draw and o in self.nodes_to_draw and not isinstance(o,
                                                                                       Literal) and is_valid_edge_pred:
-                # Run edges through the filter
-                if self.config.is_predicate_allowed(p):
+
+                # Prüfen, ob die Kante unseren Filtern entspricht ODER eine generierte Listenkante ist
+                is_list_generated = str(p).startswith(LIST_NS_BASE)
+                if is_list_generated or self.config.is_predicate_allowed(p):
                     edges_to_draw.append((str(s), str(p), str(o)))
 
         # Sort edges deterministically by string value
@@ -268,10 +322,16 @@ class RDFToYedConverter:
                           source="none", target=target_arrow)
             # --------------------
 
-            edge_label = p_str.split("/")[-1].split("#")[-1] or "link"
+            # Listen-Kanten speziell benennen (#1, #2, ...)
+            if p_str.startswith(LIST_NS_INDEX):
+                edge_label = "#" + p_str.split("#")[-1]
+            else:
+                edge_label = p_str.split("/")[-1].split("#")[-1] or "link"
+
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}EdgeLabel").text = edge_label
 
     def convert(self, rdf_graph):
+        self._preprocess_lists(rdf_graph)
         self._pass_1_collect_data(rdf_graph)
         self._fetch_images()
         attr_map = self._setup_graphml_keys()

@@ -3,6 +3,10 @@
 Python library for easy converting any __RDF__ to __GraphML__ (http://graphml.graphdrawing.org/specification/xsd.html)
 compatible with __yEd__ (https://www.yworks.com/products/yed).
 
+## Configuration
+
+### Styles
+
 Following styles are known by __yEd__:
 
 `shape`:
@@ -30,5 +34,17 @@ Following styles are known by __yEd__:
 - `standard`
 - `transparent_circle`
 - `white_delta`
+
+### Special Handling of RDF Lists
+
+Lists are contracted to single nodes.
+
+    "type_styles": {
+      "http://yed.rdf.list/List": {
+        "color": "#FFD700",
+        "shape": "hexagon",
+        "priority": 100
+      }
+    }
 
 
