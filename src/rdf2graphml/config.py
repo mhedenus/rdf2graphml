@@ -1,8 +1,9 @@
+import fnmatch
 import json
 import logging
-import fnmatch
-from rdflib import URIRef
 from pathlib import Path
+
+from rdflib import URIRef
 
 logger = logging.getLogger(__name__)
 

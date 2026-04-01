@@ -1,8 +1,9 @@
 import argparse
 import logging
 import sys
-from rdflib import Graph
 from pathlib import Path
+
+from rdflib import Graph
 
 from .config import ConverterConfig
 from .converter import RDFToYedConverter

@@ -1,15 +1,16 @@
-import urllib.request
-import urllib.error
-import http.cookiejar
 import base64
-import logging
-import io
-import time
 import hashlib
+import http.cookiejar
+import io
 import json
-from pathlib import Path
-from PIL import Image
+import logging
 import tempfile
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
