@@ -101,7 +101,7 @@ def _scale_and_encode(image_bytes, target_height):
         return None, None
 
 
-def load_image_as_base64(source, is_local=False, target_height=64, base_dir=None):
+def load_icon_as_base64(source, is_local=False, target_height=64, base_dir=None):
     """
     Main function: Loads an image (with cache, backoff, and cookies), scales it, and encodes it.
     If is_local=True, source is resolved relative to base_dir.

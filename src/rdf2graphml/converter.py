@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from rdflib import Literal, BNode
 from rdflib.namespace import RDFS, RDF
 
-from .image_loader import load_image_as_base64
+from .icon_loader import load_icon_as_base64
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +128,7 @@ class RDFToYedConverter:
                 logger.debug(f"Processing image: {src}")
 
                 # Defensive unpacking including config base dir
-                result = load_image_as_base64(
+                result = load_icon_as_base64(
                     src,
                     icon_data["is_local"],
                     self.config.icon_target_height,
