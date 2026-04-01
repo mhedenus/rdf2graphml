@@ -1,6 +1,5 @@
 {
   "preferred_language": "de",
-  "icon_target_height": 46,
   "include_predicates": [],
   "exclude_predicates": [
     "http://example.org/geheimesProperty*"
@@ -10,13 +9,14 @@
     "http://www.w3.org/2002/07/owl#NamedIndividual",
     "http://example.org/IgnoredType"
   ],
-  "entity_property_uris": [
+  "node_properties": [
     "https://schema.org/url",
     "http://xmlns.com/foaf/0.1/mbox",
     "http://xmlns.com/foaf/0.1/depiction",
     "http://xmlns.com/foaf/0.1/homepage"
   ],
-  "icon_property_uris": [
+  "icon_height": 40,
+  "icon_locators": [
     "http://xmlns.com/foaf/0.1/img"
   ],
   "type_styles": {

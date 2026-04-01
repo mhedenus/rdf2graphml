@@ -8,17 +8,17 @@ logger = logging.getLogger(__name__)
 
 
 class ConverterConfig:
-    def __init__(self, entity_property_uris=None, icon_property_uris=None, type_styles=None,
-                 icon_target_height=64, preferred_language="de", image_base_dir=None,
+    def __init__(self, node_properties=None, icon_locators=None, type_styles=None,
+                 icon_height=64, preferred_language="de", base_dir=None,
                  include_predicates=None, exclude_predicates=None,
                  include_types=None, exclude_types=None):
 
-        self.entity_property_uris = set(entity_property_uris) if entity_property_uris else set()
-        self.icon_property_uris = set(icon_property_uris) if icon_property_uris else set()
+        self.node_properties = set(node_properties) if node_properties else set()
+        self.icon_locators = set(icon_locators) if icon_locators else set()
         self.type_styles = type_styles if type_styles else {}
-        self.icon_target_height = icon_target_height
+        self.icon_target_height = icon_height
         self.preferred_language = preferred_language
-        self.image_base_dir = Path(image_base_dir) if image_base_dir else Path.cwd()
+        self.image_base_dir = Path(base_dir) if base_dir else Path.cwd()
 
         self.include_predicates = include_predicates if include_predicates else []
         self.exclude_predicates = exclude_predicates if exclude_predicates else []
@@ -52,16 +52,16 @@ class ConverterConfig:
             data = json.load(f)
 
         base_dir = config_path.parent
-        if "image_base_dir" in data:
-            base_dir = (config_path.parent / data["image_base_dir"]).resolve()
+        if "base_dir" in data:
+            base_dir = (config_path.parent / data["base_dir"]).resolve()
 
         return cls(
-            entity_property_uris={URIRef(u) for u in data.get("entity_property_uris", [])},
-            icon_property_uris={URIRef(u) for u in data.get("icon_property_uris", [])},
+            node_properties={URIRef(u) for u in data.get("node_properties", [])},
+            icon_locators={URIRef(u) for u in data.get("icon_locators", [])},
             type_styles={URIRef(k): v for k, v in data.get("type_styles", {}).items()},
-            icon_target_height=data.get("icon_target_height", 64),
+            icon_height=data.get("icon_height", 64),
             preferred_language=data.get("preferred_language", "de"),
-            image_base_dir=base_dir,
+            base_dir=base_dir,
             include_predicates=data.get("include_predicates", []),
             exclude_predicates=data.get("exclude_predicates", []),
             # WICHTIG: Diese beiden Zeilen müssen existieren, sonst greift der Filter nie!

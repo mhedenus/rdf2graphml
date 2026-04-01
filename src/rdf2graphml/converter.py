@@ -46,7 +46,7 @@ class RDFToYedConverter:
         allowed_triples = []
         for s, p, o in rdf_graph:
             is_structural = (p == RDF.type or p == RDFS.label or p == RDFS.comment or
-                             p in self.config.icon_property_uris)
+                             p in self.config.icon_locators)
 
             # Filter predicates
             if not is_structural and not self.config.is_predicate_allowed(p):
@@ -60,7 +60,7 @@ class RDFToYedConverter:
 
         # 2. Collect structural data from filtered triples
         for s, p, o in allowed_triples:
-            if p in self.config.entity_property_uris or p in self.config.icon_property_uris or p == RDF.type:
+            if p in self.config.node_properties or p in self.config.icon_locators or p == RDF.type:
                 self.nodes_forced_as_attributes.add(o)
 
             if p == RDFS.label and isinstance(o, Literal):
@@ -69,7 +69,7 @@ class RDFToYedConverter:
                 self.node_display_labels_raw[s].append((str(o), o.language))
             elif p == RDFS.comment:
                 self.node_comments[s] = str(o)
-            elif p in self.config.icon_property_uris:
+            elif p in self.config.icon_locators:
                 new_icon = {"source": str(o), "is_local": isinstance(o, Literal)}
                 if s not in self.node_icons or new_icon["source"] < self.node_icons[s]["source"]:
                     self.node_icons[s] = new_icon
@@ -82,10 +82,10 @@ class RDFToYedConverter:
             if s not in self.nodes_forced_as_attributes:
                 self.nodes_to_draw.add(s)
 
-            if p == RDFS.comment or p in self.config.icon_property_uris:
+            if p == RDFS.comment or p in self.config.icon_locators:
                 continue
 
-            if isinstance(o, Literal) or p in self.config.entity_property_uris or p == RDF.type:
+            if isinstance(o, Literal) or p in self.config.node_properties or p == RDF.type:
                 if s not in self.node_attributes:
                     self.node_attributes[s] = {}
                 p_str = str(p)
@@ -231,8 +231,8 @@ class RDFToYedConverter:
         edges_to_draw = []
         for s, p, o in rdf_graph:
             if s in self.nodes_to_draw and o in self.nodes_to_draw and not isinstance(o, Literal) \
-                    and p not in (RDFS.comment, RDF.type) and p not in self.config.entity_property_uris \
-                    and p not in self.config.icon_property_uris:
+                    and p not in (RDFS.comment, RDF.type) and p not in self.config.node_properties \
+                    and p not in self.config.icon_locators:
 
                 # Run edges through the filter
                 if self.config.is_predicate_allowed(p):
