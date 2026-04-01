@@ -18,27 +18,27 @@ def setup_logging(verbose):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Konvertiert RDF-Dateien deterministisch in das yEd GraphML-Format."
+        description="Converts RDF files to the yEd GraphML format."
     )
 
     parser.add_argument(
         "output",
-        help="Pfad zur Ausgabe-Datei (z.B. output.graphml)"
+        help="Path to the output file (e.g., output.graphml)"
     )
     parser.add_argument(
         "-c", "--config",
         required=True,
-        help="Pfad zur JSON-Konfigurationsdatei"
+        help="Path to the JSON configuration file"
     )
     parser.add_argument(
         "inputs",
         nargs="+",
-        help="Eine oder mehrere RDF-Dateien (TTL, XML, etc.) zum Einlesen"
+        help="One or more RDF files (TTL, XML, etc.) to read"
     )
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",
-        help="Aktiviert detailliertes Logging"
+        help="Enable verbose logging"
     )
 
     args = parser.parse_args()
@@ -46,32 +46,32 @@ def main():
     logger = logging.getLogger(__name__)
 
     try:
-        # 1. Konfiguration laden
+        # 1. Load configuration
         config = ConverterConfig.from_json(args.config)
 
-        # 2. RDF-Graph aufbauen
+        # 2. Build RDF graph
         g = Graph()
         for input_file in args.inputs:
             path = Path(input_file)
             if not path.exists():
-                logger.error(f"Eingabedatei nicht gefunden: {path}")
+                logger.error(f"Input file not found: {path}")
                 sys.exit(1)
 
-            logger.info(f"Lese {path} ein...")
-            # Format anhand der Endung raten, Fallback auf turtle
+            logger.debug(f"Reading {path}...")
+            # Guess format from suffix, fallback to turtle
             fmt = "xml" if path.suffix in [".rdf", ".owl"] else "turtle"
             g.parse(str(path), format=fmt)
 
-        # 3. Konvertieren und speichern
-        logger.info(f"Starte Konvertierung von {len(g)} Tripeln...")
+        # 3. Convert and save
+        logger.debug(f"Starting conversion of {len(g)} triples...")
         converter = RDFToYedConverter(config)
         converter.convert(g)
         converter.save(args.output)
 
-        logger.info(f"Erfolgreich gespeichert unter: {args.output}")
+        logger.debug(f"Saved to: {args.output}")
 
     except Exception as e:
-        logger.error(f"Ein Fehler ist aufgetreten: {e}")
+        logger.error(f"An error occurred: {e}")
         sys.exit(1)
 
 
