@@ -29,7 +29,7 @@ def main():
     parser.add_argument(
         "-c", "--config",
         required=True,
-        help="Path to the JSON configuration file"
+        help="Path to the configuration file (.json or .ttl)"
     )
     parser.add_argument(
         "inputs",
@@ -47,8 +47,19 @@ def main():
     logger = logging.getLogger(__name__)
 
     try:
-        # 1. Load configuration
-        config = ConverterConfig.from_json(args.config)
+        # 1. Load configuration based on file suffix
+        config_path = Path(args.config)
+        if not config_path.exists():
+            logger.error(f"Config file not found: {config_path}")
+            sys.exit(1)
+
+        # Automatische Erkennung des Formats
+        if config_path.suffix.lower() in [".ttl", ".turtle"]:
+            logger.debug(f"Loading configuration as Turtle: {config_path}")
+            config = ConverterConfig.from_turtle(str(config_path))
+        else:
+            logger.debug(f"Loading configuration as JSON: {config_path}")
+            config = ConverterConfig.from_json(str(config_path))
 
         # 2. Build RDF graph
         g = Graph()

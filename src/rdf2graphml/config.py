@@ -4,36 +4,42 @@ import logging
 from pathlib import Path
 from typing import Set, List, Dict, Optional, Any
 
-from rdflib import URIRef
+from rdflib import URIRef, Graph, Namespace
+from rdflib.namespace import RDF
 
 logger = logging.getLogger(__name__)
+
+# Namespace für die Konfiguration
+CONF = Namespace("https://www.hedenus.de/rdf2graphml/")
 
 
 class ConverterConfig:
     def __init__(
-        self,
-        node_properties: Optional[List[str]] = None,
-        icon_locators: Optional[List[str]] = None,
-        type_styles: Optional[Dict[str, Dict[str, Any]]] = None,
-        edge_styles: Optional[Dict[str, Dict[str, Any]]] = None,
-        type_as_edge: bool = False,
-        icon_height: int = 64,
-        preferred_language: str = "de",
-        base_dir: Optional[Path] = None,
-        include_predicates: Optional[List[str]] = None,
-        exclude_predicates: Optional[List[str]] = None,
-        include_types: Optional[List[str]] = None,
-        exclude_types: Optional[List[str]] = None,
-        group_type: Optional[str] = None,
-        group_contains: Optional[str] = None,
-        default_node_style: Optional[Dict[str, Dict[str, str]]] = None
+            self,
+            node_properties: Optional[List[str]] = None,
+            icon_locators: Optional[List[str]] = None,
+            type_styles: Optional[Dict[str, Dict[str, Any]]] = None,
+            edge_styles: Optional[Dict[str, Dict[str, Any]]] = None,
+            type_as_edge: bool = False,
+            icon_height: int = 64,
+            preferred_language: str = "de",
+            base_dir: Optional[Path] = None,
+            include_predicates: Optional[List[str]] = None,
+            exclude_predicates: Optional[List[str]] = None,
+            include_types: Optional[List[str]] = None,
+            exclude_types: Optional[List[str]] = None,
+            group_type: Optional[str] = None,
+            group_contains: Optional[str] = None,
+            default_node_style: Optional[Dict[str, Dict[str, str]]] = None
     ) -> None:
 
         self.type_as_edge: bool = type_as_edge
         self.node_properties: Set[URIRef] = {URIRef(u) for u in node_properties} if node_properties else set()
         self.icon_locators: Set[URIRef] = {URIRef(u) for u in icon_locators} if icon_locators else set()
-        self.type_styles: Dict[URIRef, Dict[str, Any]] = {URIRef(k): v for k, v in type_styles.items()} if type_styles else {}
-        self.edge_styles: Dict[URIRef, Dict[str, Any]] = {URIRef(k): v for k, v in edge_styles.items()} if edge_styles else {}
+        self.type_styles: Dict[URIRef, Dict[str, Any]] = {URIRef(k): v for k, v in
+                                                          type_styles.items()} if type_styles else {}
+        self.edge_styles: Dict[URIRef, Dict[str, Any]] = {URIRef(k): v for k, v in
+                                                          edge_styles.items()} if edge_styles else {}
         self.icon_height: int = icon_height
         self.preferred_language: str = preferred_language
         self.image_base_dir: Path = base_dir if base_dir else Path.cwd()
@@ -46,7 +52,6 @@ class ConverterConfig:
         self.group_type: Optional[URIRef] = URIRef(group_type) if group_type else None
         self.group_contains: Optional[URIRef] = URIRef(group_contains) if group_contains else None
 
-        # Default Node Styles with fallback
         self.default_node_style: Dict[str, Dict[str, str]] = default_node_style or {
             "blank_nodes": {"color": "#C0C0C0", "shape": "ellipse"},
             "uri_nodes": {"color": "#E8EEF7", "shape": "roundrectangle"}
@@ -97,3 +102,119 @@ class ConverterConfig:
             group_contains=data.get("group_contains"),
             default_node_style=data.get("default_node_style")
         )
+
+    @classmethod
+    def from_rdf(cls, graph: Graph, file_path: Optional[str] = None) -> 'ConverterConfig':
+        config_nodes = list(graph.subjects(RDF.type, CONF.Configuration))
+        if not config_nodes:
+            raise ValueError(f"No configuration node found (Expected type: {CONF.Configuration})")
+
+        # Falls es mehrere gibt, nehmen wir die erste Konfiguration
+        c_node = config_nodes[0]
+
+        def get_str(pred: URIRef, default: Any = None) -> Any:
+            val = graph.value(c_node, pred)
+            return str(val) if val is not None else default
+
+        def get_int(pred: URIRef, default: int) -> int:
+            val = graph.value(c_node, pred)
+            return int(val) if val is not None else default
+
+        def get_bool(pred: URIRef, default: bool) -> bool:
+            val = graph.value(c_node, pred)
+            if val is not None:
+                return str(val).lower() == "true"
+            return default
+
+        def get_list(pred: URIRef) -> List[str]:
+            return [str(o) for o in graph.objects(c_node, pred)]
+
+        # Basis-Parameter
+        type_as_edge = get_bool(CONF.type_as_edge, False)
+        icon_height = get_int(CONF.icon_height, 64)
+        preferred_language = get_str(CONF.preferred_language, "de")
+        group_type = get_str(CONF.group_type)
+        group_contains = get_str(CONF.group_contains)
+
+        # Listen-Parameter
+        node_properties = get_list(CONF.node_properties)
+        icon_locators = get_list(CONF.icon_locators)
+        include_predicates = get_list(CONF.include_predicates)
+        exclude_predicates = get_list(CONF.exclude_predicates)
+        include_types = get_list(CONF.include_types)
+        exclude_types = get_list(CONF.exclude_types)
+
+        # Style-Dictionaries parsen
+        type_styles = {}
+        for style_node in graph.objects(c_node, CONF.type_styles):
+            target = graph.value(style_node, CONF.target)
+            if target:
+                s_dict = {}
+                color = graph.value(style_node, CONF.color)
+                shape = graph.value(style_node, CONF.shape)
+                priority = graph.value(style_node, CONF.priority)
+                if color: s_dict["color"] = str(color)
+                if shape: s_dict["shape"] = str(shape)
+                if priority: s_dict["priority"] = int(priority)
+                type_styles[str(target)] = s_dict
+
+        edge_styles = {}
+        for style_node in graph.objects(c_node, CONF.edge_styles):
+            target = graph.value(style_node, CONF.target)
+            if target:
+                s_dict = {}
+                color = graph.value(style_node, CONF.color)
+                line_type = graph.value(style_node, CONF.line_type)
+                target_arrow = graph.value(style_node, CONF.target_arrow)
+                if color: s_dict["color"] = str(color)
+                if line_type: s_dict["line_type"] = str(line_type)
+                if target_arrow: s_dict["target_arrow"] = str(target_arrow)
+                edge_styles[str(target)] = s_dict
+
+        # Default Node Style
+        default_node_style = None
+        dns_node = graph.value(c_node, CONF.default_node_style)
+        if dns_node:
+            default_node_style = {}
+            for key in ["blank_nodes", "uri_nodes"]:
+                key_node = graph.value(dns_node, CONF[key])
+                if key_node:
+                    s_dict = {}
+                    color = graph.value(key_node, CONF.color)
+                    shape = graph.value(key_node, CONF.shape)
+                    if color: s_dict["color"] = str(color)
+                    if shape: s_dict["shape"] = str(shape)
+                    default_node_style[key] = s_dict
+
+        # Pfad-Auflösung
+        base_dir_str = get_str(CONF.base_dir)
+        base_dir = None
+        if file_path:
+            config_path = Path(file_path).resolve()
+            base_dir = config_path.parent
+            if base_dir_str:
+                base_dir = (config_path.parent / base_dir_str).resolve()
+
+        return cls(
+            node_properties=node_properties,
+            icon_locators=icon_locators,
+            type_styles=type_styles,
+            edge_styles=edge_styles,
+            type_as_edge=type_as_edge,
+            icon_height=icon_height,
+            preferred_language=preferred_language,
+            base_dir=base_dir,
+            include_predicates=include_predicates,
+            exclude_predicates=exclude_predicates,
+            include_types=include_types,
+            exclude_types=exclude_types,
+            group_type=group_type,
+            group_contains=group_contains,
+            default_node_style=default_node_style
+        )
+
+    @classmethod
+    def from_turtle(cls, file_path: str) -> 'ConverterConfig':
+        g = Graph()
+        g.parse(file_path, format="turtle")
+        return cls.from_rdf(g, file_path=file_path)
