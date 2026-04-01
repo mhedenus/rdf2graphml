@@ -13,23 +13,26 @@ class ConverterConfig:
                  type_as_edge=False,
                  icon_height=64, preferred_language="de", base_dir=None,
                  include_predicates=None, exclude_predicates=None,
-                 include_types=None, exclude_types=None):
+                 include_types=None, exclude_types=None,
+                 group_type=None, group_contains=None):
 
         self.type_as_edge = type_as_edge
         self.node_properties = set(node_properties) if node_properties else set()
         self.icon_locators = set(icon_locators) if icon_locators else set()
         self.type_styles = type_styles if type_styles else {}
-        self.edge_styles = edge_styles if edge_styles else {}  # NEU: Edge Styles
+        self.edge_styles = edge_styles if edge_styles else {}
         self.icon_height = icon_height
         self.preferred_language = preferred_language
         self.image_base_dir = Path(base_dir) if base_dir else Path.cwd()
 
         self.include_predicates = include_predicates if include_predicates else []
         self.exclude_predicates = exclude_predicates if exclude_predicates else []
-
-        # WICHTIG: Hier müssen die Typ-Listen gespeichert werden
         self.include_types = include_types if include_types else []
         self.exclude_types = exclude_types if exclude_types else []
+
+        # NEU: Konfiguration für Hierarchien / Gruppen
+        self.group_type = URIRef(group_type) if group_type else None
+        self.group_contains = URIRef(group_contains) if group_contains else None
 
     def _is_uri_allowed(self, uri, includes, excludes):
         uri_str = str(uri)
@@ -64,12 +67,14 @@ class ConverterConfig:
             icon_locators={URIRef(u) for u in data.get("icon_locators", [])},
             type_styles={URIRef(k): v for k, v in data.get("type_styles", {}).items()},
             edge_styles={URIRef(k): v for k, v in data.get("edge_styles", {}).items()},
-            type_as_edge=data.get("type_as_edge", False),  # NEU: Aus JSON lesen
+            type_as_edge=data.get("type_as_edge", False),
             icon_height=data.get("icon_height", 64),
             preferred_language=data.get("preferred_language", "de"),
             base_dir=base_dir,
             include_predicates=data.get("include_predicates", []),
             exclude_predicates=data.get("exclude_predicates", []),
             include_types=data.get("include_types", []),
-            exclude_types=data.get("exclude_types", [])
+            exclude_types=data.get("exclude_types", []),
+            group_type=data.get("group_type"),
+            group_contains=data.get("group_contains")
         )

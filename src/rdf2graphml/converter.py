@@ -5,6 +5,7 @@ from rdflib import Literal, BNode, URIRef
 from rdflib.namespace import RDFS, RDF
 
 from .icon_loader import load_icon_as_base64
+from .hierarchy import GraphHierarchy
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,9 @@ class RDFToYedConverter:
         self.image_resources = {}
         self.node_types = {}
 
+        # NEU: Hierarchie-Manager
+        self.hierarchy = GraphHierarchy()
+
     def _generate_unique_attr_names(self, uris):
         used_names = {}
         mapping = {}
@@ -45,14 +49,7 @@ class RDFToYedConverter:
         return mapping
 
     def _preprocess_lists(self, rdf_graph):
-        """
-        Sucht nach RDF-Listen, fasst sie in einem Knoten zusammen und
-        erstellt nummerierte Kanten zu den Listenelementen.
-        """
-        # Alle Knoten, die Teil der "Wirbelsäule" einer Liste sind (außer dem Kopf)
         rest_objects = set(rdf_graph.objects(predicate=RDF.rest))
-
-        # Listen-Köpfe sind Knoten, die ein rdf:first haben, aber nicht Ziel eines rdf:rest sind
         list_heads = set(rdf_graph.subjects(predicate=RDF.first)) - rest_objects
 
         triples_to_remove = []
@@ -67,22 +64,18 @@ class RDFToYedConverter:
                 rest_val = next(rdf_graph.objects(subject=current, predicate=RDF.rest), None)
 
                 if first_val is not None:
-                    # Neue Kante vom Kopf zum Item
                     triples_to_add.append((head, URIRef(f"{LIST_NS_INDEX}{index}"), first_val))
                     index += 1
 
-                # Alte Listen-Struktur zum Löschen markieren
                 for p in (RDF.first, RDF.rest):
                     for o in rdf_graph.objects(subject=current, predicate=p):
                         triples_to_remove.append((current, p, o))
 
                 current = rest_val
 
-            # Dem Listen-Knoten einen Typ und ein Label geben, damit er gezeichnet und gestylt werden kann
             triples_to_add.append((head, RDF.type, LIST_TYPE_URI))
             triples_to_add.append((head, RDFS.label, Literal("List")))
 
-        # Graph mutieren
         for t in triples_to_remove:
             rdf_graph.remove(t)
         for t in triples_to_add:
@@ -90,29 +83,33 @@ class RDFToYedConverter:
 
     def _pass_1_collect_data(self, rdf_graph):
         self.nodes_forced_as_attributes = set()
-
-        # 1. Apply filter: Only process allowed triples
         allowed_triples = []
+
         for s, p, o in rdf_graph:
-            # Prüfen, ob es eine unserer generierten Listen-Kanten/Typen ist
+            # Gruppen-Hierarchie erkennen
+            if self.config.group_type and p == RDF.type and o == self.config.group_type:
+                self.hierarchy.add_group(s)
+                self.nodes_to_draw.add(s)
+
+            if self.config.group_contains and p == self.config.group_contains:
+                self.hierarchy.add_relation(parent=s, child=o)
+                self.nodes_to_draw.add(s)
+                self.nodes_to_draw.add(o)
+
             is_list_generated = str(p).startswith(LIST_NS_BASE)
-
             is_structural = (p == RDF.type or p == RDFS.label or p == RDFS.comment or
-                             p in self.config.icon_locators or is_list_generated)
+                             p in self.config.icon_locators or is_list_generated or
+                             p == self.config.group_contains)
 
-            # Filter predicates
             if not is_structural and not self.config.is_predicate_allowed(p):
                 continue
 
-            # Filter types
             if p == RDF.type and not self.config.is_type_allowed(o):
                 continue
 
             allowed_triples.append((s, p, o))
 
-        # 2. Collect structural data from filtered triples
         for s, p, o in allowed_triples:
-            # RDF.type nur dann als Attribut erzwingen, wenn type_as_edge False ist
             if p in self.config.node_properties or p in self.config.icon_locators or (
                     p == RDF.type and not self.config.type_as_edge):
                 self.nodes_forced_as_attributes.add(o)
@@ -128,19 +125,16 @@ class RDFToYedConverter:
                 if s not in self.node_icons or new_icon["source"] < self.node_icons[s]["source"]:
                     self.node_icons[s] = new_icon
             elif p == RDF.type:
-                # Die Typen für das Styling (type_styles) erfassen wir weiterhin immer
                 if s not in self.node_types: self.node_types[s] = []
                 self.node_types[s].append(o)
 
-        # 3. Determine attributes and nodes to draw
         for s, p, o in allowed_triples:
             if s not in self.nodes_forced_as_attributes:
                 self.nodes_to_draw.add(s)
 
-            if p == RDFS.comment or p in self.config.icon_locators:
+            if p == RDFS.comment or p in self.config.icon_locators or p == self.config.group_contains:
                 continue
 
-            # RDF.type nur dann als Text-Attribut auflisten, wenn type_as_edge False ist
             if isinstance(o, Literal) or p in self.config.node_properties or (
                     p == RDF.type and not self.config.type_as_edge):
                 if s not in self.node_attributes:
@@ -156,7 +150,6 @@ class RDFToYedConverter:
                 self.nodes_to_draw.add(o)
 
     def _get_display_label(self, node):
-        """Determines the deterministic display label based on language."""
         labels = self.node_display_labels_raw.get(node, [])
         if not labels:
             if isinstance(node, BNode):
@@ -165,7 +158,6 @@ class RDFToYedConverter:
                 return "<" + str(node) + ">"
 
         pref_lang = self.config.preferred_language
-
         pref_labels = [text for text, lang in labels if lang == pref_lang]
         if pref_labels:
             return sorted(pref_labels)[0]
@@ -183,15 +175,12 @@ class RDFToYedConverter:
             src = icon_data["source"]
             if src not in seen_sources:
                 logger.debug(f"Processing image: {src}")
-
-                # Defensive unpacking including config base dir
                 result = load_icon_as_base64(
                     src,
                     icon_data["is_local"],
                     self.config.icon_height,
                     self.config.image_base_dir
                 )
-
                 if result and isinstance(result, tuple) and len(result) == 2:
                     b64, width = result
                     if b64 and width:
@@ -199,7 +188,6 @@ class RDFToYedConverter:
                         resource_id += 1
                 else:
                     logger.warning(f"Image could not be loaded and will be skipped: {src}")
-
         self.image_resources = seen_sources
 
     def _setup_graphml_keys(self):
@@ -220,73 +208,110 @@ class RDFToYedConverter:
             mapping[uri] = k_id
         return mapping
 
+    def _apply_group_styling(self, data_g, disp_label):
+        """Generiert das spezifische XML für eine aufklappbare Gruppe in yEd."""
+        proxy = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ProxyAutoBoundsNode")
+        realizers = ET.SubElement(proxy, "{http://www.yworks.com/xml/graphml}Realizers", active="0")
+        group_node = ET.SubElement(realizers, "{http://www.yworks.com/xml/graphml}GroupNode")
+
+        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
+                      alignment="right", autoSizePolicy="node_width", backgroundColor="#EBEBEB",
+                      borderDistance="0.0", fontFamily="Dialog", fontSize="15", fontStyle="plain",
+                      hasLineColor="false", modelName="internal", modelPosition="t",
+                      textColor="#000000", visible="true").text = disp_label
+
+        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Fill", color="#F5F5F5", transparent="false")
+        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}BorderStyle", color="#000000", type="dashed",
+                      width="1.0")
+        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Shape", type="roundrectangle")
+        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}State", closed="false", closedHeight="50.0",
+                      closedWidth="50.0", innerGraphDisplayEnabled="false")
+        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Insets", bottom="15", bottomF="15.0", left="15",
+                      leftF="15.0", right="15", rightF="15.0", top="15", topF="15.0")
+        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}BorderInsets", bottom="0", bottomF="0.0",
+                      left="0", leftF="0.0", right="0", rightF="0.0", top="0", topF="0.0")
+
+    def _apply_standard_styling(self, data_g, node, disp_label):
+        """Generiert das XML für einen normalen ShapeNode oder ImageNode."""
+        icon_src = self.node_icons.get(node, {}).get("source")
+        if icon_src in self.image_resources:
+            img_data = self.image_resources[icon_src]
+            img_node = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ImageNode")
+            ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}Geometry",
+                          height=str(self.config.icon_height), width=str(img_data["width"]))
+            ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
+                          modelName="sandwich", modelPosition="s").text = disp_label
+            ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}Image", refid=str(img_data["id"]))
+        else:
+            shape_n = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ShapeNode")
+            color, shape = "#E8EEF7", "roundrectangle"
+            if isinstance(node, BNode):
+                color, shape = "#C0C0C0", "ellipse"
+
+            available_types = sorted(self.node_types.get(node, []), key=str)
+            best_style, best_priority = None, -1
+
+            for t in available_types:
+                if t in self.config.type_styles:
+                    style = self.config.type_styles[t]
+                    priority = style.get("priority", 0)
+                    if best_style is None or priority > best_priority:
+                        best_style, best_priority = style, priority
+
+            if best_style:
+                color = best_style.get("color", color)
+                shape = best_style.get("shape", shape)
+
+            ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}NodeLabel").text = disp_label
+            width = str(max(50, len(disp_label) * 8 + 20)) if disp_label else "30"
+            ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Geometry", width=width, height="30")
+            ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Fill", color=color, transparent="false")
+            ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Shape", type=shape)
+
+    def _build_node_recursive(self, node, parent_xml_element, attr_map):
+        n_id = str(node)
+        node_elem = ET.SubElement(parent_xml_element, "node", id=n_id)
+        ET.SubElement(node_elem, "data", key="d_url").text = n_id
+
+        if node in self.node_comments:
+            comment_text = self.node_comments[node]
+            html_tooltip = f"<html><body style='width: 250px;'>{comment_text}</body></html>"
+            ET.SubElement(node_elem, "data", key="d_desc").text = html_tooltip
+
+        if node in self.node_attributes:
+            for p_uri in sorted(self.node_attributes[node].keys()):
+                vals = self.node_attributes[node][p_uri]
+                ET.SubElement(node_elem, "data", key=attr_map[p_uri]).text = ", ".join(sorted(vals))
+
+        data_g = ET.SubElement(node_elem, "data", key="d_ng")
+
+        raw_label = self._get_display_label(node)
+        max_len = 60
+        disp_label = (raw_label[:(max_len - 3)] + "...") if len(raw_label) > max_len else raw_label
+
+        if node in self.hierarchy.groups:
+            self._apply_group_styling(data_g, disp_label)
+            # Inneren Graphen für Kinder aufbauen
+            inner_graph = ET.SubElement(node_elem, "graph", id=f"{n_id}:", edgedefault="directed")
+
+            children = self.hierarchy.children_of.get(node, set())
+            for child in sorted(children):
+                self._build_node_recursive(child, inner_graph, attr_map)
+        else:
+            self._apply_standard_styling(data_g, node, disp_label)
+
     def _pass_2_build_graph(self, rdf_graph, attr_map):
-        # 1. DRAW NODES DETERMINISTICALLY
-        for node in sorted(self.nodes_to_draw):
-            n_id = str(node)
-            node_elem = ET.SubElement(self.graph_element, "node", id=n_id)
-            ET.SubElement(node_elem, "data", key="d_url").text = n_id
+        # 1. KNOTEN REKURSIV ZEICHNEN
+        root_nodes = self.hierarchy.get_roots(self.nodes_to_draw)
+        for root_node in sorted(root_nodes):
+            self._build_node_recursive(root_node, self.graph_element, attr_map)
 
-            # HTML Tooltip for comments
-            if node in self.node_comments:
-                comment_text = self.node_comments[node]
-                html_tooltip = f"<html><body style='width: 250px;'>{comment_text}</body></html>"
-                ET.SubElement(node_elem, "data", key="d_desc").text = html_tooltip
-
-            if node in self.node_attributes:
-                # Determinism for attributes
-                for p_uri in sorted(self.node_attributes[node].keys()):
-                    vals = self.node_attributes[node][p_uri]
-                    ET.SubElement(node_elem, "data", key=attr_map[p_uri]).text = ", ".join(sorted(vals))
-
-            data_g = ET.SubElement(node_elem, "data", key="d_ng")
-
-            raw_label = self._get_display_label(node)
-            max_len = 60
-            disp_label = (raw_label[:(max_len - 3)] + "...") if len(raw_label) > max_len else raw_label
-
-            icon_src = self.node_icons.get(node, {}).get("source")
-            if icon_src in self.image_resources:
-                img_data = self.image_resources[icon_src]
-                img_node = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ImageNode")
-
-                ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}Geometry",
-                              height=str(self.config.icon_height),
-                              width=str(img_data["width"]))
-
-                ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
-                              modelName="sandwich", modelPosition="s").text = disp_label
-                ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}Image", refid=str(img_data["id"]))
-            else:
-                shape_n = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ShapeNode")
-                color, shape = "#E8EEF7", "roundrectangle"
-                if isinstance(node, BNode):
-                    color, shape = "#C0C0C0", "ellipse"
-
-                # Process multi-type priorities deterministically
-                available_types = sorted(self.node_types.get(node, []), key=str)
-                best_style, best_priority = None, -1
-
-                for t in available_types:
-                    if t in self.config.type_styles:
-                        style = self.config.type_styles[t]
-                        priority = style.get("priority", 0)
-                        if best_style is None or priority > best_priority:
-                            best_style, best_priority = style, priority
-
-                if best_style:
-                    color = best_style.get("color", color)
-                    shape = best_style.get("shape", shape)
-
-                ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}NodeLabel").text = disp_label
-                width = str(max(50, len(disp_label) * 8 + 20)) if disp_label else "30"
-                ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Geometry", width=width, height="30")
-                ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Fill", color=color, transparent="false")
-                ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Shape", type=shape)
-
-        # 2. COLLECT AND DRAW EDGES DETERMINISTICALLY
+        # 2. KANTEN ZEICHNEN
         edges_to_draw = []
         for s, p, o in rdf_graph:
+            if p == self.config.group_contains:
+                continue  # Gruppenzuordnungen nicht als sichtbare Kanten zeichnen
+
             is_valid_edge_pred = True
             if p == RDFS.comment: is_valid_edge_pred = False
             if p == RDF.type and not self.config.type_as_edge: is_valid_edge_pred = False
@@ -295,23 +320,18 @@ class RDFToYedConverter:
 
             if s in self.nodes_to_draw and o in self.nodes_to_draw and not isinstance(o,
                                                                                       Literal) and is_valid_edge_pred:
-
-                # Prüfen, ob die Kante unseren Filtern entspricht ODER eine generierte Listenkante ist
                 is_list_generated = str(p).startswith(LIST_NS_BASE)
                 if is_list_generated or self.config.is_predicate_allowed(p):
                     edges_to_draw.append((str(s), str(p), str(o)))
 
-        # Sort edges deterministically by string value
         for s_str, p_str, o_str in sorted(edges_to_draw):
             edge = ET.SubElement(self.graph_element, "edge", id=f"e{self.edge_counter}", source=s_str, target=o_str)
             self.edge_counter += 1
             poly = ET.SubElement(ET.SubElement(edge, "data", key="d_eg"),
                                  "{http://www.yworks.com/xml/graphml}PolyLineEdge")
 
-            # --- Edge Styling ---
             p_uri = URIRef(p_str)
             edge_style = self.config.edge_styles.get(p_uri, {})
-
             color = edge_style.get("color", "#000000")
             line_type = edge_style.get("line_type", "line")
             target_arrow = edge_style.get("target_arrow", "standard")
@@ -320,9 +340,7 @@ class RDFToYedConverter:
                           color=color, type=line_type, width="1.0")
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}Arrows",
                           source="none", target=target_arrow)
-            # --------------------
 
-            # Listen-Kanten speziell benennen (#1, #2, ...)
             if p_str.startswith(LIST_NS_INDEX):
                 edge_label = "#" + p_str.split("#")[-1]
             else:
@@ -337,7 +355,6 @@ class RDFToYedConverter:
         attr_map = self._setup_graphml_keys()
         self._pass_2_build_graph(rdf_graph, attr_map)
 
-        # Embed Base64 resources
         if self.image_resources:
             res_data = ET.SubElement(self.root, "data", key="d_res")
             y_res = ET.SubElement(res_data, "{http://www.yworks.com/xml/graphml}Resources")

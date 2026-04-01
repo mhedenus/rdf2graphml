@@ -55,5 +55,7 @@
       "shape": "ellipse",
       "priority": 20
     }
-  }
+  },
+  "group_type": "http://example.org/Group",
+  "group_contains": "http://example.org/contains"
 }

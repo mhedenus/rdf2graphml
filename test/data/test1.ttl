@@ -14,6 +14,19 @@
     <geheimesProperty1> "GEHEIM!" ;
     <arbeitetMit> (<s1> <s2> <s3> <s4>).
 
+<b> a foaf:Person ;
+    rdfs:label "Bob" ;
+    foaf:mbox <mailto:bob@example.org> ;
+    foaf:knows <a> .
+
+<g1> a <Group>; rdfs:label "Group 1" ;
+    <contains> <s1>, <s2> .
+
+<g2> a <Group>; rdfs:label "Group 2" ;
+    <contains> <s3>, <s4> .
+
+<g1> <uses> <g2> .
+
 <s1> a <System> ;
     rdfs:label "System 1" .
 
@@ -23,10 +36,21 @@
 <s3> a <System> ;
     rdfs:label "System 3" .
 
-<s4> a <System> ;
+<s4> a <ComplexSystem> ;
     rdfs:label "System 4" .
 
-<b> a foaf:Person ;
-    rdfs:label "Bob" ;
-    foaf:mbox <mailto:bob@example.org> ;
-    foaf:knows <a> .
+<ComplexSystem> a <Group>; rdfs:label "ComplexSystem" ;
+    <contains> <s4.1>, <s4.2> .
+
+
+<s4.1> a <System> ; rdfs:label "System 4.1" .
+<s4.2> a <System> ; rdfs:label "System 4.2" .
+
+
+
+
+
+
+
+
+
