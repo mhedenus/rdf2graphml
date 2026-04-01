@@ -18,7 +18,17 @@
   "icon_locators": [
     "http://xmlns.com/foaf/0.1/img"
   ],
-  "type_as_edge": true,
+  "default_node_style": {
+    "blank_nodes": {
+      "color": "#DDDDDD",
+      "shape": "ellipse"
+    },
+    "uri_nodes": {
+      "color": "#E8EEF7",
+      "shape": "roundrectangle"
+    }
+  },
+  "type_as_edge": false,
   "edge_styles": {
     "http://xmlns.com/foaf/0.1/knows": {
       "color": "#FF0000"

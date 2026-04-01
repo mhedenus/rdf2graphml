@@ -1,7 +1,9 @@
 import logging
 import xml.etree.ElementTree as ET
+from typing import Set, Dict, List, Tuple, Any, Optional
 
-from rdflib import Literal, BNode, URIRef
+from rdflib import Graph, Literal, BNode, URIRef
+from rdflib.term import Node
 from rdflib.namespace import RDFS, RDF
 
 from .icon_loader import load_icon_as_base64
@@ -10,34 +12,33 @@ from .hierarchy import GraphHierarchy
 logger = logging.getLogger(__name__)
 
 # --- Constants for RDF List processing ---
-LIST_NS_BASE = "https://www.hedenus.de/rdf2graphml/"
-LIST_NS_INDEX = f"{LIST_NS_BASE}index#"
-LIST_TYPE_URI = URIRef(f"{LIST_NS_BASE}List")
+LIST_NS_BASE: str = "https://www.hedenus.de/rdf2graphml/"
+LIST_NS_INDEX: str = f"{LIST_NS_BASE}index#"
+LIST_TYPE_URI: URIRef = URIRef(f"{LIST_NS_BASE}List")
 
 
 class RDFToYedConverter:
-    def __init__(self, config):
+    def __init__(self, config: Any) -> None:
         self.config = config
-        self.root = ET.Element("graphml", {"xmlns": "http://graphml.graphdrawing.org/xmlns"})
-        self.graph_element = ET.SubElement(self.root, "graph", id="G", edgedefault="directed")
+        self.root: ET.Element = ET.Element("graphml", {"xmlns": "http://graphml.graphdrawing.org/xmlns"})
+        self.graph_element: ET.Element = ET.SubElement(self.root, "graph", id="G", edgedefault="directed")
 
-        self.nodes_to_draw = set()
-        self.node_attributes = {}
-        self.all_attribute_keys = set()
-        self.edge_counter = 0
+        self.nodes_to_draw: Set[Node] = set()
+        self.node_attributes: Dict[Node, Dict[str, List[str]]] = {}
+        self.all_attribute_keys: Set[str] = set()
+        self.edge_counter: int = 0
 
-        self.node_display_labels_raw = {}
-        self.node_comments = {}
-        self.node_icons = {}
-        self.image_resources = {}
-        self.node_types = {}
+        self.node_display_labels_raw: Dict[Node, List[Tuple[str, Optional[str]]]] = {}
+        self.node_comments: Dict[Node, str] = {}
+        self.node_icons: Dict[Node, Dict[str, Any]] = {}
+        self.image_resources: Dict[str, Dict[str, Any]] = {}
+        self.node_types: Dict[Node, List[Node]] = {}
 
-        # NEU: Hierarchie-Manager
-        self.hierarchy = GraphHierarchy()
+        self.hierarchy: GraphHierarchy = GraphHierarchy()
 
-    def _generate_unique_attr_names(self, uris):
-        used_names = {}
-        mapping = {}
+    def _generate_unique_attr_names(self, uris: Set[str]) -> Dict[str, str]:
+        used_names: Dict[str, int] = {}
+        mapping: Dict[str, str] = {}
         for uri in sorted(uris):
             base_name = str(uri).split("/")[-1].split("#")[-1] or "attr"
             if base_name not in used_names:
@@ -48,12 +49,19 @@ class RDFToYedConverter:
                 used_names[base_name] += 1
         return mapping
 
-    def _preprocess_lists(self, rdf_graph):
+    def _preprocess_lists(self, rdf_graph: Graph) -> None:
+        """
+        Finds RDF lists, aggregates them into a single list node, and creates
+        numbered edges to the list items.
+
+        WARNING: This method modifies the provided rdflib.Graph in-place by
+        removing the original rdf:first/rdf:rest triples and adding new ones.
+        """
         rest_objects = set(rdf_graph.objects(predicate=RDF.rest))
         list_heads = set(rdf_graph.subjects(predicate=RDF.first)) - rest_objects
 
-        triples_to_remove = []
-        triples_to_add = []
+        triples_to_remove: List[Tuple[Node, Node, Node]] = []
+        triples_to_add: List[Tuple[Node, Node, Node]] = []
 
         for head in list_heads:
             current = head
@@ -81,12 +89,11 @@ class RDFToYedConverter:
         for t in triples_to_add:
             rdf_graph.add(t)
 
-    def _pass_1_collect_data(self, rdf_graph):
-        self.nodes_forced_as_attributes = set()
-        allowed_triples = []
+    def _pass_1_collect_data(self, rdf_graph: Graph) -> None:
+        self.nodes_forced_as_attributes: Set[Node] = set()
+        allowed_triples: List[Tuple[Node, Node, Node]] = []
 
         for s, p, o in rdf_graph:
-            # Gruppen-Hierarchie erkennen
             if self.config.group_type and p == RDF.type and o == self.config.group_type:
                 self.hierarchy.add_group(s)
                 self.nodes_to_draw.add(s)
@@ -117,7 +124,8 @@ class RDFToYedConverter:
             if p == RDFS.label and isinstance(o, Literal):
                 if s not in self.node_display_labels_raw:
                     self.node_display_labels_raw[s] = []
-                self.node_display_labels_raw[s].append((str(o), o.language))
+                lang = o.language if hasattr(o, 'language') else None
+                self.node_display_labels_raw[s].append((str(o), lang))
             elif p == RDFS.comment:
                 self.node_comments[s] = str(o)
             elif p in self.config.icon_locators:
@@ -149,7 +157,7 @@ class RDFToYedConverter:
             elif o not in self.nodes_forced_as_attributes:
                 self.nodes_to_draw.add(o)
 
-    def _get_display_label(self, node):
+    def _get_display_label(self, node: Node) -> str:
         labels = self.node_display_labels_raw.get(node, [])
         if not labels:
             if isinstance(node, BNode):
@@ -168,9 +176,9 @@ class RDFToYedConverter:
 
         return sorted([text for text, lang in labels])[0]
 
-    def _fetch_images(self):
+    def _fetch_images(self) -> None:
         resource_id = 1
-        seen_sources = {}
+        seen_sources: Dict[str, Dict[str, Any]] = {}
         for icon_data in self.node_icons.values():
             src = icon_data["source"]
             if src not in seen_sources:
@@ -190,7 +198,7 @@ class RDFToYedConverter:
                     logger.warning(f"Image could not be loaded and will be skipped: {src}")
         self.image_resources = seen_sources
 
-    def _setup_graphml_keys(self):
+    def _setup_graphml_keys(self) -> Dict[str, str]:
         ET.SubElement(self.root, "key", id="d_ng", **{"for": "node", "yfiles.type": "nodegraphics"})
         ET.SubElement(self.root, "key", id="d_eg", **{"for": "edge", "yfiles.type": "edgegraphics"})
         ET.SubElement(self.root, "key", id="d_url", **{"attr.name": "url", "attr.type": "string", "for": "node"})
@@ -199,7 +207,7 @@ class RDFToYedConverter:
         ET.SubElement(self.root, "key", id="d_res", **{"for": "graphml", "yfiles.type": "resources"})
 
         name_map = self._generate_unique_attr_names(self.all_attribute_keys)
-        mapping = {}
+        mapping: Dict[str, str] = {}
         for i, uri in enumerate(sorted(self.all_attribute_keys)):
             k_id = f"d_a{i}"
             name = name_map[uri]
@@ -208,8 +216,7 @@ class RDFToYedConverter:
             mapping[uri] = k_id
         return mapping
 
-    def _apply_group_styling(self, data_g, disp_label):
-        """Generiert das spezifische XML für eine aufklappbare Gruppe in yEd."""
+    def _apply_group_styling(self, data_g: ET.Element, disp_label: str) -> None:
         proxy = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ProxyAutoBoundsNode")
         realizers = ET.SubElement(proxy, "{http://www.yworks.com/xml/graphml}Realizers", active="0")
         group_node = ET.SubElement(realizers, "{http://www.yworks.com/xml/graphml}GroupNode")
@@ -231,8 +238,7 @@ class RDFToYedConverter:
         ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}BorderInsets", bottom="0", bottomF="0.0",
                       left="0", leftF="0.0", right="0", rightF="0.0", top="0", topF="0.0")
 
-    def _apply_standard_styling(self, data_g, node, disp_label):
-        """Generiert das XML für einen normalen ShapeNode oder ImageNode."""
+    def _apply_standard_styling(self, data_g: ET.Element, node: Node, disp_label: str) -> None:
         icon_src = self.node_icons.get(node, {}).get("source")
         if icon_src in self.image_resources:
             img_data = self.image_resources[icon_src]
@@ -244,19 +250,27 @@ class RDFToYedConverter:
             ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}Image", refid=str(img_data["id"]))
         else:
             shape_n = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ShapeNode")
-            color, shape = "#E8EEF7", "roundrectangle"
+
+            # Load defaults from config
             if isinstance(node, BNode):
-                color, shape = "#C0C0C0", "ellipse"
+                default_style = self.config.default_node_style.get("blank_nodes", {})
+            else:
+                default_style = self.config.default_node_style.get("uri_nodes", {})
+
+            color = default_style.get("color", "#E8EEF7")
+            shape = default_style.get("shape", "roundrectangle")
 
             available_types = sorted(self.node_types.get(node, []), key=str)
-            best_style, best_priority = None, -1
+            best_style = None
+            best_priority = -1
 
             for t in available_types:
                 if t in self.config.type_styles:
                     style = self.config.type_styles[t]
                     priority = style.get("priority", 0)
                     if best_style is None or priority > best_priority:
-                        best_style, best_priority = style, priority
+                        best_style = style
+                        best_priority = priority
 
             if best_style:
                 color = best_style.get("color", color)
@@ -268,7 +282,7 @@ class RDFToYedConverter:
             ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Fill", color=color, transparent="false")
             ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Shape", type=shape)
 
-    def _build_node_recursive(self, node, parent_xml_element, attr_map):
+    def _build_node_recursive(self, node: Node, parent_xml_element: ET.Element, attr_map: Dict[str, str]) -> None:
         n_id = str(node)
         node_elem = ET.SubElement(parent_xml_element, "node", id=n_id)
         ET.SubElement(node_elem, "data", key="d_url").text = n_id
@@ -291,7 +305,6 @@ class RDFToYedConverter:
 
         if node in self.hierarchy.groups:
             self._apply_group_styling(data_g, disp_label)
-            # Inneren Graphen für Kinder aufbauen
             inner_graph = ET.SubElement(node_elem, "graph", id=f"{n_id}:", edgedefault="directed")
 
             children = self.hierarchy.children_of.get(node, set())
@@ -300,17 +313,15 @@ class RDFToYedConverter:
         else:
             self._apply_standard_styling(data_g, node, disp_label)
 
-    def _pass_2_build_graph(self, rdf_graph, attr_map):
-        # 1. KNOTEN REKURSIV ZEICHNEN
+    def _pass_2_build_graph(self, rdf_graph: Graph, attr_map: Dict[str, str]) -> None:
         root_nodes = self.hierarchy.get_roots(self.nodes_to_draw)
         for root_node in sorted(root_nodes):
             self._build_node_recursive(root_node, self.graph_element, attr_map)
 
-        # 2. KANTEN ZEICHNEN
-        edges_to_draw = []
+        edges_to_draw: List[Tuple[str, str, str]] = []
         for s, p, o in rdf_graph:
             if p == self.config.group_contains:
-                continue  # Gruppenzuordnungen nicht als sichtbare Kanten zeichnen
+                continue
 
             is_valid_edge_pred = True
             if p == RDFS.comment: is_valid_edge_pred = False
@@ -348,7 +359,14 @@ class RDFToYedConverter:
 
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}EdgeLabel").text = edge_label
 
-    def convert(self, rdf_graph):
+    def convert(self, rdf_graph: Graph) -> None:
+        """
+        Converts the provided RDF graph to GraphML.
+
+        WARNING: This method modifies the provided rdflib.Graph in-place
+        (e.g., when resolving RDF lists during preprocessing). If you need
+        to preserve the original state of the graph, pass a copy instead.
+        """
         self._preprocess_lists(rdf_graph)
         self._pass_1_collect_data(rdf_graph)
         self._fetch_images()
@@ -363,7 +381,7 @@ class RDFToYedConverter:
                                   type="java.awt.image.BufferedImage")
                 r.text = res["base64"]
 
-    def save(self, path):
+    def save(self, path: str) -> None:
         tree = ET.ElementTree(self.root)
         ET.register_namespace('y', 'http://www.yworks.com/xml/graphml')
         if hasattr(ET, "indent"):

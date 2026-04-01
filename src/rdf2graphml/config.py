@@ -2,6 +2,7 @@ import fnmatch
 import json
 import logging
 from pathlib import Path
+from typing import Set, List, Dict, Optional, Any
 
 from rdflib import URIRef
 
@@ -9,32 +10,49 @@ logger = logging.getLogger(__name__)
 
 
 class ConverterConfig:
-    def __init__(self, node_properties=None, icon_locators=None, type_styles=None, edge_styles=None,
-                 type_as_edge=False,
-                 icon_height=64, preferred_language="de", base_dir=None,
-                 include_predicates=None, exclude_predicates=None,
-                 include_types=None, exclude_types=None,
-                 group_type=None, group_contains=None):
+    def __init__(
+        self,
+        node_properties: Optional[List[str]] = None,
+        icon_locators: Optional[List[str]] = None,
+        type_styles: Optional[Dict[str, Dict[str, Any]]] = None,
+        edge_styles: Optional[Dict[str, Dict[str, Any]]] = None,
+        type_as_edge: bool = False,
+        icon_height: int = 64,
+        preferred_language: str = "de",
+        base_dir: Optional[Path] = None,
+        include_predicates: Optional[List[str]] = None,
+        exclude_predicates: Optional[List[str]] = None,
+        include_types: Optional[List[str]] = None,
+        exclude_types: Optional[List[str]] = None,
+        group_type: Optional[str] = None,
+        group_contains: Optional[str] = None,
+        default_node_style: Optional[Dict[str, Dict[str, str]]] = None
+    ) -> None:
 
-        self.type_as_edge = type_as_edge
-        self.node_properties = set(node_properties) if node_properties else set()
-        self.icon_locators = set(icon_locators) if icon_locators else set()
-        self.type_styles = type_styles if type_styles else {}
-        self.edge_styles = edge_styles if edge_styles else {}
-        self.icon_height = icon_height
-        self.preferred_language = preferred_language
-        self.image_base_dir = Path(base_dir) if base_dir else Path.cwd()
+        self.type_as_edge: bool = type_as_edge
+        self.node_properties: Set[URIRef] = {URIRef(u) for u in node_properties} if node_properties else set()
+        self.icon_locators: Set[URIRef] = {URIRef(u) for u in icon_locators} if icon_locators else set()
+        self.type_styles: Dict[URIRef, Dict[str, Any]] = {URIRef(k): v for k, v in type_styles.items()} if type_styles else {}
+        self.edge_styles: Dict[URIRef, Dict[str, Any]] = {URIRef(k): v for k, v in edge_styles.items()} if edge_styles else {}
+        self.icon_height: int = icon_height
+        self.preferred_language: str = preferred_language
+        self.image_base_dir: Path = base_dir if base_dir else Path.cwd()
 
-        self.include_predicates = include_predicates if include_predicates else []
-        self.exclude_predicates = exclude_predicates if exclude_predicates else []
-        self.include_types = include_types if include_types else []
-        self.exclude_types = exclude_types if exclude_types else []
+        self.include_predicates: List[str] = include_predicates if include_predicates else []
+        self.exclude_predicates: List[str] = exclude_predicates if exclude_predicates else []
+        self.include_types: List[str] = include_types if include_types else []
+        self.exclude_types: List[str] = exclude_types if exclude_types else []
 
-        # NEU: Konfiguration für Hierarchien / Gruppen
-        self.group_type = URIRef(group_type) if group_type else None
-        self.group_contains = URIRef(group_contains) if group_contains else None
+        self.group_type: Optional[URIRef] = URIRef(group_type) if group_type else None
+        self.group_contains: Optional[URIRef] = URIRef(group_contains) if group_contains else None
 
-    def _is_uri_allowed(self, uri, includes, excludes):
+        # Default Node Styles with fallback
+        self.default_node_style: Dict[str, Dict[str, str]] = default_node_style or {
+            "blank_nodes": {"color": "#C0C0C0", "shape": "ellipse"},
+            "uri_nodes": {"color": "#E8EEF7", "shape": "roundrectangle"}
+        }
+
+    def _is_uri_allowed(self, uri: URIRef, includes: List[str], excludes: List[str]) -> bool:
         uri_str = str(uri)
         for pattern in excludes:
             if fnmatch.fnmatch(uri_str, pattern):
@@ -46,14 +64,14 @@ class ConverterConfig:
                 return True
         return False
 
-    def is_predicate_allowed(self, predicate_uri):
+    def is_predicate_allowed(self, predicate_uri: URIRef) -> bool:
         return self._is_uri_allowed(predicate_uri, self.include_predicates, self.exclude_predicates)
 
-    def is_type_allowed(self, type_uri):
+    def is_type_allowed(self, type_uri: URIRef) -> bool:
         return self._is_uri_allowed(type_uri, self.include_types, self.exclude_types)
 
     @classmethod
-    def from_json(cls, file_path):
+    def from_json(cls, file_path: str) -> 'ConverterConfig':
         config_path = Path(file_path).resolve()
         with open(config_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -63,10 +81,10 @@ class ConverterConfig:
             base_dir = (config_path.parent / data["base_dir"]).resolve()
 
         return cls(
-            node_properties={URIRef(u) for u in data.get("node_properties", [])},
-            icon_locators={URIRef(u) for u in data.get("icon_locators", [])},
-            type_styles={URIRef(k): v for k, v in data.get("type_styles", {}).items()},
-            edge_styles={URIRef(k): v for k, v in data.get("edge_styles", {}).items()},
+            node_properties=data.get("node_properties", []),
+            icon_locators=data.get("icon_locators", []),
+            type_styles=data.get("type_styles", {}),
+            edge_styles=data.get("edge_styles", {}),
             type_as_edge=data.get("type_as_edge", False),
             icon_height=data.get("icon_height", 64),
             preferred_language=data.get("preferred_language", "de"),
@@ -76,5 +94,6 @@ class ConverterConfig:
             include_types=data.get("include_types", []),
             exclude_types=data.get("exclude_types", []),
             group_type=data.get("group_type"),
-            group_contains=data.get("group_contains")
+            group_contains=data.get("group_contains"),
+            default_node_style=data.get("default_node_style")
         )
