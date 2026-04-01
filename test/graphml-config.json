@@ -28,7 +28,7 @@
       "shape": "roundrectangle"
     }
   },
-  "type_as_edge": false,
+  "type_as_edge": true,
   "edge_styles": {
     "http://xmlns.com/foaf/0.1/knows": {
       "color": "#FF0000"

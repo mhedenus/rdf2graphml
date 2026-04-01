@@ -157,13 +157,21 @@ class RDFToYedConverter:
             elif o not in self.nodes_forced_as_attributes:
                 self.nodes_to_draw.add(o)
 
-    def _get_display_label(self, node: Node) -> str:
+    def _get_display_label(self, node: Node, rdf_graph: Graph) -> str:
         labels = self.node_display_labels_raw.get(node, [])
         if not labels:
             if isinstance(node, BNode):
                 return ""
             else:
-                return "<" + str(node) + ">"
+                # NEU: QNames (Präfixe) aus dem Namespace-Manager als Fallback nutzen
+                try:
+                    prefix, namespace, name = rdf_graph.namespace_manager.compute_qname(node)
+                    if prefix:
+                        return f"{prefix}:{name}"
+                    return name
+                except Exception:
+                    # Fallback zum kompletten URI, falls kein Namespace passt
+                    return f"<{str(node)}>"
 
         pref_lang = self.config.preferred_language
         pref_labels = [text for text, lang in labels if lang == pref_lang]
@@ -251,7 +259,6 @@ class RDFToYedConverter:
         else:
             shape_n = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ShapeNode")
 
-            # Load defaults from config
             if isinstance(node, BNode):
                 default_style = self.config.default_node_style.get("blank_nodes", {})
             else:
@@ -282,7 +289,8 @@ class RDFToYedConverter:
             ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Fill", color=color, transparent="false")
             ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Shape", type=shape)
 
-    def _build_node_recursive(self, node: Node, parent_xml_element: ET.Element, attr_map: Dict[str, str]) -> None:
+    def _build_node_recursive(self, node: Node, parent_xml_element: ET.Element, attr_map: Dict[str, str],
+                              rdf_graph: Graph) -> None:
         n_id = str(node)
         node_elem = ET.SubElement(parent_xml_element, "node", id=n_id)
         ET.SubElement(node_elem, "data", key="d_url").text = n_id
@@ -299,7 +307,8 @@ class RDFToYedConverter:
 
         data_g = ET.SubElement(node_elem, "data", key="d_ng")
 
-        raw_label = self._get_display_label(node)
+        # NEU: rdf_graph wird an _get_display_label übergeben
+        raw_label = self._get_display_label(node, rdf_graph)
         max_len = 60
         disp_label = (raw_label[:(max_len - 3)] + "...") if len(raw_label) > max_len else raw_label
 
@@ -309,16 +318,18 @@ class RDFToYedConverter:
 
             children = self.hierarchy.children_of.get(node, set())
             for child in sorted(children):
-                self._build_node_recursive(child, inner_graph, attr_map)
+                self._build_node_recursive(child, inner_graph, attr_map, rdf_graph)
         else:
             self._apply_standard_styling(data_g, node, disp_label)
 
     def _pass_2_build_graph(self, rdf_graph: Graph, attr_map: Dict[str, str]) -> None:
         root_nodes = self.hierarchy.get_roots(self.nodes_to_draw)
         for root_node in sorted(root_nodes):
-            self._build_node_recursive(root_node, self.graph_element, attr_map)
+            self._build_node_recursive(root_node, self.graph_element, attr_map, rdf_graph)
 
-        edges_to_draw: List[Tuple[str, str, str]] = []
+        # NEU: Dictionary nutzen, um bidirektionale Kanten zu erkennen (Wert = is_bidirectional)
+        edges_to_draw: Dict[Tuple[str, str, str], bool] = {}
+
         for s, p, o in rdf_graph:
             if p == self.config.group_contains:
                 continue
@@ -333,9 +344,20 @@ class RDFToYedConverter:
                                                                                       Literal) and is_valid_edge_pred:
                 is_list_generated = str(p).startswith(LIST_NS_BASE)
                 if is_list_generated or self.config.is_predicate_allowed(p):
-                    edges_to_draw.append((str(s), str(p), str(o)))
 
-        for s_str, p_str, o_str in sorted(edges_to_draw):
+                    s_str, p_str, o_str = str(s), str(p), str(o)
+                    forward_edge = (s_str, p_str, o_str)
+                    backward_edge = (o_str, p_str, s_str)
+
+                    if backward_edge in edges_to_draw:
+                        # Gegenrichtung existiert bereits -> markiere bestehende als bidirektional
+                        edges_to_draw[backward_edge] = True
+                    else:
+                        # Neue Kante, standardmäßig nicht bidirektional
+                        edges_to_draw[forward_edge] = False
+
+        # Iteriere über das generierte Dictionary
+        for (s_str, p_str, o_str), is_bidi in sorted(edges_to_draw.items()):
             edge = ET.SubElement(self.graph_element, "edge", id=f"e{self.edge_counter}", source=s_str, target=o_str)
             self.edge_counter += 1
             poly = ET.SubElement(ET.SubElement(edge, "data", key="d_eg"),
@@ -347,10 +369,13 @@ class RDFToYedConverter:
             line_type = edge_style.get("line_type", "line")
             target_arrow = edge_style.get("target_arrow", "standard")
 
+            # NEU: Bidirektionale Pfeile setzen, falls nötig
+            source_arrow = target_arrow if is_bidi and target_arrow != "none" else "none"
+
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}LineStyle",
                           color=color, type=line_type, width="1.0")
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}Arrows",
-                          source="none", target=target_arrow)
+                          source=source_arrow, target=target_arrow)
 
             if p_str.startswith(LIST_NS_INDEX):
                 edge_label = "#" + p_str.split("#")[-1]
