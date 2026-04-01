@@ -9,7 +9,7 @@ if not GITHUB_TOKEN:
     raise RuntimeError("Umgebungsvariable GITHUB_TOKEN fehlt!")
 
 # Basis-URL deines Repos
-BASE_URL = "https://raw.githubusercontent.com/mhedenus/o-o/main/"
+BASE_URL = "https://raw.githubusercontent.com/mhedenus/rdf2graphml/main/"
 
 @app.route("/<path:filepath>")
 def proxy_file(filepath):

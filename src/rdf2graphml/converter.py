@@ -1,7 +1,9 @@
-import xml.etree.ElementTree as ET
 import logging
-from rdflib import Literal, URIRef, BNode
+import xml.etree.ElementTree as ET
+
+from rdflib import Literal, BNode
 from rdflib.namespace import RDFS, RDF
+
 from .image_loader import load_image_as_base64
 
 logger = logging.getLogger(__name__)
@@ -100,7 +102,10 @@ class RDFToYedConverter:
         """Ermittelt das deterministische Anzeigelabel basierend auf Sprache."""
         labels = self.node_display_labels_raw.get(node, [])
         if not labels:
-            return "Anonymous"
+            if isinstance(node, BNode):
+                return ""
+            else:
+                return "<" + str(node) + ">"
 
         pref_lang = self.config.preferred_language
 
@@ -180,7 +185,8 @@ class RDFToYedConverter:
             data_g = ET.SubElement(node_elem, "data", key="d_ng")
 
             raw_label = self._get_display_label(node)
-            disp_label = (raw_label[:37] + "...") if len(raw_label) > 40 else raw_label
+            max_len = 60
+            disp_label = (raw_label[:(max_len - 3)] + "...") if len(raw_label) > max_len else raw_label
 
             icon_src = self.node_icons.get(node, {}).get("source")
             if icon_src in self.image_resources:
@@ -198,7 +204,7 @@ class RDFToYedConverter:
                 shape_n = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ShapeNode")
                 color, shape = "#E8EEF7", "roundrectangle"
                 if isinstance(node, BNode):
-                    color, shape, disp_label = "#C0C0C0", "ellipse", ""
+                    color, shape = "#C0C0C0", "ellipse"
 
                 # Multi-Type Prioritäten deterministisch verarbeiten
                 available_types = sorted(self.node_types.get(node, []), key=str)

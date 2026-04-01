@@ -1,0 +1,149 @@
+@prefix : <http://example.org/cat-ontology#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+#################################################################
+# Ontology
+#################################################################
+
+:CatOntology a owl:Ontology .
+
+#################################################################
+# Classes
+#################################################################
+
+:Animal a owl:Class .
+
+:Mammal a owl:Class ;
+    rdfs:subClassOf :Animal .
+
+:Felid a owl:Class ;
+    rdfs:subClassOf :Mammal ;
+    rdfs:comment "Family Felidae: cats, lions, tigers, etc."@en .
+
+:DomesticCat a owl:Class ;
+    rdfs:subClassOf :Felid ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            :Felid
+            [ a owl:Restriction ;
+              owl:onProperty :isDomesticated ;
+              owl:hasValue true
+            ]
+        )
+    ] ;
+    rdfs:label "Domestic Cat"@en .
+
+:WildCat a owl:Class ;
+    rdfs:subClassOf :Felid ;
+    owl:disjointWith :DomesticCat .
+
+:Breed a owl:Class .
+
+:Person a owl:Class .
+
+#################################################################
+# Object Properties
+#################################################################
+
+:hasOwner a owl:ObjectProperty ;
+    rdfs:domain :DomesticCat ;
+    rdfs:range :Person ;
+    owl:inverseOf :owns .
+
+:owns a owl:ObjectProperty ;
+    rdfs:domain :Person ;
+    rdfs:range :DomesticCat .
+
+:hasBreed a owl:ObjectProperty ;
+    rdfs:domain :DomesticCat ;
+    rdfs:range :Breed ;
+    a owl:FunctionalProperty .
+
+:hasParent a owl:ObjectProperty ;
+    rdfs:domain :Animal ;
+    rdfs:range :Animal ;
+    owl:inverseOf :isParentOf .
+
+:isParentOf a owl:ObjectProperty ;
+    rdfs:domain :Animal ;
+    rdfs:range :Animal .
+
+#################################################################
+# Data Properties
+#################################################################
+
+:hasAge a owl:DatatypeProperty ;
+    rdfs:domain :Animal ;
+    rdfs:range xsd:integer .
+
+:hasName a owl:DatatypeProperty ;
+    rdfs:domain :Animal ;
+    rdfs:range xsd:string ;
+    a owl:FunctionalProperty .
+
+:isDomesticated a owl:DatatypeProperty ;
+    rdfs:domain :Felid ;
+    rdfs:range xsd:boolean .
+
+#################################################################
+# Class Restrictions (deep modeling)
+#################################################################
+
+# Domestic cats must have exactly one breed
+:DomesticCat rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :hasBreed ;
+    owl:cardinality "1"^^xsd:nonNegativeInteger
+] .
+
+# Domestic cats must have at least one parent that is a Felid
+:DomesticCat rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :hasParent ;
+    owl:someValuesFrom :Felid
+] .
+
+:WildCat rdfs:subClassOf [
+    rdfs:label "Wild cats must NOT have an owner" ;
+    a owl:Restriction ;
+    owl:onProperty :hasOwner ;
+    owl:maxCardinality "0"^^xsd:nonNegativeInteger
+] .
+
+# All felids have only felid parents (universal restriction)
+:Felid rdfs:subClassOf [
+    a owl:Restriction ;
+    owl:onProperty :hasParent ;
+    owl:allValuesFrom :Felid
+] .
+
+#################################################################
+# Individuals
+#################################################################
+
+:EuropeanShorthair a :Breed .
+:MaineCoon a :Breed .
+
+:Alice a :Person ;
+    :hasName "Alice" .
+
+:Tom a :DomesticCat ;
+    :hasName "Tom" ;
+    :hasAge 4 ;
+    :hasBreed :EuropeanShorthair ;
+    :hasOwner :Alice ;
+    :isDomesticated true .
+
+:Luna a :DomesticCat ;
+    :hasName "Luna" ;
+    :hasAge 2 ;
+    :hasBreed :MaineCoon ;
+    :isDomesticated true .
+
+:WildBobcat a :WildCat ;
+    :hasName "Bobcat" ;
+    :isDomesticated false .

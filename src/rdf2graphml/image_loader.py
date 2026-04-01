@@ -9,11 +9,13 @@ import hashlib
 import json
 from pathlib import Path
 from PIL import Image
+import tempfile
 
 logger = logging.getLogger(__name__)
 
 # --- Cache Konfiguration ---
-CACHE_DIR = Path("../../.yed_image_cache")
+CACHE_DIR = Path(tempfile.gettempdir()) / "rdf2graphml_cache"
+
 
 
 def _init_cache():
@@ -115,7 +117,7 @@ def load_image_as_base64(source, is_local=False, target_height=64, base_dir=None
         try:
             with open(cache_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                logger.info(f" -> Lade Bild aus Cache: {source}")
+                logger.info(f" -> Lade Bild aus Cache: {source} -> {cache_file}")
                 return data["base64"], data["width"]
         except Exception as e:
             logger.warning(f"Cache-Datei beschädigt ({e}), lade neu...")
