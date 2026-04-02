@@ -109,7 +109,6 @@ class ConverterConfig:
         if not config_nodes:
             raise ValueError(f"No configuration node found (Expected type: {CONF.Configuration})")
 
-        # Falls es mehrere gibt, nehmen wir die erste Konfiguration
         c_node = config_nodes[0]
 
         def get_str(pred: URIRef, default: Any = None) -> Any:
@@ -129,14 +128,12 @@ class ConverterConfig:
         def get_list(pred: URIRef) -> List[str]:
             return [str(o) for o in graph.objects(c_node, pred)]
 
-        # Basis-Parameter
         type_as_edge = get_bool(CONF.type_as_edge, False)
         icon_height = get_int(CONF.icon_height, 64)
         preferred_language = get_str(CONF.preferred_language, "de")
         group_type = get_str(CONF.group_type)
         group_contains = get_str(CONF.group_contains)
 
-        # Listen-Parameter
         node_properties = get_list(CONF.node_properties)
         icon_locators = get_list(CONF.icon_locators)
         include_predicates = get_list(CONF.include_predicates)
@@ -144,7 +141,6 @@ class ConverterConfig:
         include_types = get_list(CONF.include_types)
         exclude_types = get_list(CONF.exclude_types)
 
-        # Style-Dictionaries parsen
         type_styles = {}
         for style_node in graph.objects(c_node, CONF.type_styles):
             target = graph.value(style_node, CONF.target)
@@ -153,9 +149,12 @@ class ConverterConfig:
                 color = graph.value(style_node, CONF.color)
                 shape = graph.value(style_node, CONF.shape)
                 priority = graph.value(style_node, CONF.priority)
+                icon = graph.value(style_node, CONF.icon)  # NEU: Icon extrahieren
+
                 if color: s_dict["color"] = str(color)
                 if shape: s_dict["shape"] = str(shape)
                 if priority: s_dict["priority"] = int(priority)
+                if icon: s_dict["icon"] = str(icon)
                 type_styles[str(target)] = s_dict
 
         edge_styles = {}
@@ -171,7 +170,6 @@ class ConverterConfig:
                 if target_arrow: s_dict["target_arrow"] = str(target_arrow)
                 edge_styles[str(target)] = s_dict
 
-        # Default Node Style
         default_node_style = None
         dns_node = graph.value(c_node, CONF.default_node_style)
         if dns_node:
@@ -186,7 +184,6 @@ class ConverterConfig:
                     if shape: s_dict["shape"] = str(shape)
                     default_node_style[key] = s_dict
 
-        # Pfad-Auflösung
         base_dir_str = get_str(CONF.base_dir)
         base_dir = None
         if file_path:

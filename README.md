@@ -34,10 +34,18 @@ The configuration can be supplied as JSON or Turtle file.
     "uri_nodes": { "color": "#E8EEF7", "shape": "roundrectangle" }
   },
   "type_styles": {
-    "http://example.org/ontology/System": { "color": "#ADD8E6", "shape": "roundrectangle", "priority": 10 }
+    "http://example.org/ontology/System": {
+      "icon": "system_icon.png", 
+      "color": "#ADD8E6",
+      "shape": "roundrectangle",
+      "priority": 10
+    }
   },
   "edge_styles": {
-    "http://example.org/ontology/dependsOn": { "color": "#FF0000", "line_type": "dashed", "target_arrow": "standard" }
+    "http://example.org/ontology/dependsOn": { 
+      "color": "#FF0000",
+      "line_type": "dashed",
+      "target_arrow": "standard" }
   },
   "include_predicates": ["*"],
   "exclude_predicates": []
@@ -64,7 +72,9 @@ The configuration can be supplied as JSON or Turtle file.
 * `default_node_style` *(object)*: Fallback styling for nodes.
     * `blank_nodes`: Style object (`color`, `shape`) applied to RDF Blank Nodes. Default: Grey ellipse.
     * `uri_nodes`: Style object (`color`, `shape`) applied to standard URI nodes. Default: Light-blue roundrectangle.
+
 * `type_styles` *(object)*: Maps `rdf:type` URIs to specific styles.
+    * `icon` (string): URL or local path to a default image/icon for this type. Takes precedence over shape. If the image fails to load, the converter gracefully falls back to the configured shape.
     * `color` *(string)*: Hex color code (e.g., `"#ADD8E6"`).
     * `shape` *(string)*: __yEd__ shape identifier (e.g., `"roundrectangle"`, `"ellipse"`, `"hexagon"`, `"diamond"`).
     * `priority` *(integer)*: If a node has multiple types, the style with the highest priority wins.
@@ -179,6 +189,7 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
             conf:target ex:System ;
             conf:color "#ADD8E6" ;
             conf:shape "roundrectangle" ;
+            conf:icon "system_icon.png" ;
             conf:priority 10
         ],
         [

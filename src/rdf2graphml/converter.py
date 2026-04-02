@@ -50,13 +50,6 @@ class RDFToYedConverter:
         return mapping
 
     def _preprocess_lists(self, rdf_graph: Graph) -> None:
-        """
-        Finds RDF lists, aggregates them into a single list node, and creates
-        numbered edges to the list items.
-
-        WARNING: This method modifies the provided rdflib.Graph in-place by
-        removing the original rdf:first/rdf:rest triples and adding new ones.
-        """
         rest_objects = set(rdf_graph.objects(predicate=RDF.rest))
         list_heads = set(rdf_graph.subjects(predicate=RDF.first)) - rest_objects
 
@@ -157,20 +150,37 @@ class RDFToYedConverter:
             elif o not in self.nodes_forced_as_attributes:
                 self.nodes_to_draw.add(o)
 
+        # NEU: Standard-Icons für die konfigurierten Typen hinterlegen
+        for node, types in self.node_types.items():
+            if node not in self.node_icons:
+                best_style = None
+                best_priority = -1
+                for t in types:
+                    if t in self.config.type_styles:
+                        style = self.config.type_styles[t]
+                        priority = style.get("priority", 0)
+                        if best_style is None or priority > best_priority:
+                            best_style = style
+                            best_priority = priority
+
+                if best_style and "icon" in best_style:
+                    icon_str = best_style["icon"]
+                    # Wir gehen davon aus, dass alles, was nicht http(s) ist, lokal ist
+                    is_local = not icon_str.startswith(("http://", "https://"))
+                    self.node_icons[node] = {"source": icon_str, "is_local": is_local}
+
     def _get_display_label(self, node: Node, rdf_graph: Graph) -> str:
         labels = self.node_display_labels_raw.get(node, [])
         if not labels:
             if isinstance(node, BNode):
                 return ""
             else:
-                # NEU: QNames (Präfixe) aus dem Namespace-Manager als Fallback nutzen
                 try:
                     prefix, namespace, name = rdf_graph.namespace_manager.compute_qname(node)
                     if prefix:
                         return f"{prefix}:{name}"
                     return name
                 except Exception:
-                    # Fallback zum kompletten URI, falls kein Namespace passt
                     return f"<{str(node)}>"
 
         pref_lang = self.config.preferred_language
@@ -307,7 +317,6 @@ class RDFToYedConverter:
 
         data_g = ET.SubElement(node_elem, "data", key="d_ng")
 
-        # NEU: rdf_graph wird an _get_display_label übergeben
         raw_label = self._get_display_label(node, rdf_graph)
         max_len = 60
         disp_label = (raw_label[:(max_len - 3)] + "...") if len(raw_label) > max_len else raw_label
@@ -327,7 +336,6 @@ class RDFToYedConverter:
         for root_node in sorted(root_nodes):
             self._build_node_recursive(root_node, self.graph_element, attr_map, rdf_graph)
 
-        # NEU: Dictionary nutzen, um bidirektionale Kanten zu erkennen (Wert = is_bidirectional)
         edges_to_draw: Dict[Tuple[str, str, str], bool] = {}
 
         for s, p, o in rdf_graph:
@@ -350,13 +358,10 @@ class RDFToYedConverter:
                     backward_edge = (o_str, p_str, s_str)
 
                     if backward_edge in edges_to_draw:
-                        # Gegenrichtung existiert bereits -> markiere bestehende als bidirektional
                         edges_to_draw[backward_edge] = True
                     else:
-                        # Neue Kante, standardmäßig nicht bidirektional
                         edges_to_draw[forward_edge] = False
 
-        # Iteriere über das generierte Dictionary
         for (s_str, p_str, o_str), is_bidi in sorted(edges_to_draw.items()):
             edge = ET.SubElement(self.graph_element, "edge", id=f"e{self.edge_counter}", source=s_str, target=o_str)
             self.edge_counter += 1
@@ -369,7 +374,6 @@ class RDFToYedConverter:
             line_type = edge_style.get("line_type", "line")
             target_arrow = edge_style.get("target_arrow", "standard")
 
-            # NEU: Bidirektionale Pfeile setzen, falls nötig
             source_arrow = target_arrow if is_bidi and target_arrow != "none" else "none"
 
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}LineStyle",
@@ -380,7 +384,16 @@ class RDFToYedConverter:
             if p_str.startswith(LIST_NS_INDEX):
                 edge_label = "#" + p_str.split("#")[-1]
             else:
-                edge_label = p_str.split("/")[-1].split("#")[-1] or "link"
+                # NEU: QNames für Kanten-Labels versuchen
+                try:
+                    prefix, namespace, name = rdf_graph.namespace_manager.compute_qname(URIRef(p_str))
+                    if prefix:
+                        edge_label = f"{prefix}:{name}"
+                    else:
+                        edge_label = name
+                except Exception:
+                    # Fallback auf bisherige Implementierung
+                    edge_label = p_str.split("/")[-1].split("#")[-1] or "link"
 
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}EdgeLabel").text = edge_label
 
