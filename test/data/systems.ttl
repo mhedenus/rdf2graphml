@@ -1,0 +1,37 @@
+@base <http://example.org/sys/> .
+
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<System> a rdfs:Class ; rdfs:label "System" .
+
+<Battery> rdfs:subClassOf <System> ; rdfs:label "Battery" ;
+    <contains> <plus>, <electrochemistry>, <minus> .
+
+<ConnectionPoint> rdfs:subClassOf <System> ; rdfs:label "Connection Point" .
+
+<Electrochemistry> rdfs:subClassOf <System> ; rdfs:label "Electrochemistry" .
+
+<electrochemistry> a <Electrochemistry> ; rdfs:label "electrochemistry" ;
+    <electricFlow> <plus> .
+
+ <minus>  <electricFlow> <electrochemistry>.
+
+<plus> a <ConnectionPoint> ; rdfs:label "plus" .
+<minus> a <ConnectionPoint> ; rdfs:label "minus" .
+
+
+
+<b1> a <Battery> ; rdfs:label "battery 1" .
+<b2> a <Battery> ; rdfs:label "battery 2" .
+<b3> a <Battery> ; rdfs:label "battery 3" .
+
+<b1> <connectedTo> <b2> .
+<b2> <connectedTo> <b3> .
+
+<BatteryHolder> rdfs:subClassOf <System> ;
+    rdfs:label "Battery Holder" ;
+     <contains> <b1>, <b2>, <b3> .
+
+<batteryHolder> a <BatteryHolder> ; rdfs:label "battery holder 1" .

@@ -1,0 +1,57 @@
+{
+  "preferred_language": "en",
+  "base_dir": "../icons",
+  "icon_height": 46,
+  "icon_locators": [
+    "http://example.org/sys/icon"
+  ],
+  "default_node_style": {
+    "blank_nodes": {
+      "color": "#DDDDDD",
+      "shape": "ellipse"
+    },
+    "uri_nodes": {
+      "color": "#E8EEF7",
+      "shape": "roundrectangle"
+    }
+  },
+  "type_as_edge": true,
+  "edge_styles": {
+    "http://www.w3.org/2000/01/rdf-schema#subClassOf": {
+      "color": "#000000",
+      "line_type": "solid",
+      "target_arrow": "white_delta"
+    },
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "color": "#AA0000",
+      "line_type": "dashed",
+      "target_arrow": "transparent_circle"
+    }
+  },
+  "type_styles": {
+    "http://example.org/sys/System": {
+      "color": "#CCCCCC",
+      "shape": "rectangle"
+    },
+    "http://example.org/sys/Battery": {
+      "icon": "battery.png",
+      "priority": 10
+    },
+    "http://example.org/sys/ConnectionPoint": {
+      "shape": "rectangle",
+      "color": "#AAAAAA",
+      "priority": 10
+    },
+    "http://example.org/sys/Electrochemistry": {
+      "shape": "rectangle3d",
+      "color": "#AAFFAA",
+      "priority": 10
+    },
+    "http://example.org/sys/BatteryHolder": {
+      "icon": "battery-holder.jpg",
+      "priority": 10
+    }
+  },
+  "group_type": "http://example.org/sys/System",
+  "group_contains": "http://example.org/sys/contains"
+}

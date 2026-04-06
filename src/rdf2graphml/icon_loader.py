@@ -91,7 +91,7 @@ def _scale_and_encode(image_bytes, target_height):
             aspect_ratio = img.width / img.height
             target_width = int(target_height * aspect_ratio)
 
-            # LANCZOS provides the best quality when downscaling images
+            # LANCZOS provides the best quality when downscaling icons
             img_resized = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
 
             buffer = io.BytesIO()

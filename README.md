@@ -21,7 +21,7 @@ The configuration can be supplied as JSON or Turtle file.
 
 ```json
 {
-  "base_dir": "./images",
+  "base_dir": "./icons",
   "icon_height": 64,
   "preferred_language": "en",
   "type_as_edge": false,
@@ -219,3 +219,7 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
             conf:line_type "line" ;
             conf:target_arrow "none"
         ] .
+
+# Notices
+
+Icons are taken from Flaticon (https://www.flaticon.com/)
