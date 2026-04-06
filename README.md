@@ -23,36 +23,48 @@ The configuration can be supplied as JSON or Turtle file.
 ```json
 {
   "namespaces": {
-    "ex": "[http://example.org/ontology/](http://example.org/ontology/)",
-    "crm": "[http://www.cidoc-crm.org/cidoc-crm/](http://www.cidoc-crm.org/cidoc-crm/)"
+    "ex": "http://example.org/ontology/"
   },
   "base_dir": "./icons",
   "icon_height": 64,
   "preferred_language": "en",
   "type_as_edge": false,
-  "node_properties": ["[http://www.w3.org/2000/01/rdf-schema#label](http://www.w3.org/2000/01/rdf-schema#label)"],
-  "icon_locators": ["[http://example.org/ontology/iconUrl](http://example.org/ontology/iconUrl)"],
-  "group_type": "[http://example.org/ontology/Group](http://example.org/ontology/Group)",
-  "group_contains": "[http://example.org/ontology/contains](http://example.org/ontology/contains)",
+  "node_properties": [
+    "http://www.w3.org/2000/01/rdf-schema#label"
+  ],
+  "icon_locators": [
+    "http://example.org/ontology/iconUrl"
+  ],
+  "group_type": "http://example.org/ontology/Group",
+  "group_contains": "http://example.org/ontology/contains",
   "default_node_style": {
-    "blank_nodes": { "color": "#DDDDDD", "shape": "ellipse" },
-    "uri_nodes": { "color": "#E8EEF7", "shape": "roundrectangle" }
+    "blank_nodes": {
+      "color": "#DDDDDD",
+      "shape": "ellipse"
+    },
+    "uri_nodes": {
+      "color": "#E8EEF7",
+      "shape": "roundrectangle"
+    }
   },
   "type_styles": {
-    "[http://example.org/ontology/System](http://example.org/ontology/System)": {
-      "icon": "system_icon.png", 
+    "http://example.org/ontology/System": {
+      "icon": "system_icon.png",
       "color": "#ADD8E6",
       "shape": "roundrectangle",
       "priority": 10
     }
   },
   "edge_styles": {
-    "[http://example.org/ontology/dependsOn](http://example.org/ontology/dependsOn)": { 
+    "http://example.org/ontology/dependsOn": {
       "color": "#FF0000",
       "line_type": "dashed",
-      "target_arrow": "standard" }
+      "target_arrow": "standard"
+    }
   },
-  "include_predicates": ["*"],
+  "include_predicates": [
+    "*"
+  ],
   "exclude_predicates": []
 }
 ```

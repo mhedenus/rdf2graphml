@@ -2,7 +2,6 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "rdf2graphml"
 version = "0.4.2"
@@ -11,6 +10,7 @@ authors = [
 ]
 description = "Converts RDF to GraphML suitable for yEd."
 readme = "README.md"
+license-files = ["LICEN[CS]E*", "vendored/licenses/*.txt", "AUTHORS.md"]
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -22,10 +22,11 @@ dependencies = [
     "Pillow>=10.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mhedenus/rdf2graphml"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
 
 [project.scripts]
 rdf2graphml = "rdf2graphml.cli:main"
