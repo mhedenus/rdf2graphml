@@ -4,7 +4,7 @@ from typing import Set, Dict, List, Tuple, Any, Optional
 
 from rdflib import Graph, Literal, BNode, URIRef
 from rdflib.term import Node
-from rdflib.namespace import RDFS, RDF
+from rdflib.namespace import RDFS, RDF, Namespace
 
 from .icon_loader import load_icon_as_base64
 from .hierarchy import GraphHierarchy
@@ -405,6 +405,10 @@ class RDFToYedConverter:
         (e.g., when resolving RDF lists during preprocessing). If you need
         to preserve the original state of the graph, pass a copy instead.
         """
+
+        for prefix, uri in self.config.namespaces.items():
+            rdf_graph.bind(prefix, Namespace(uri), override=True)
+
         self._preprocess_lists(rdf_graph)
         self._pass_1_collect_data(rdf_graph)
         self._fetch_images()

@@ -53,5 +53,8 @@
     }
   },
   "group_type": "http://example.org/sys/System",
-  "group_contains": "http://example.org/sys/contains"
+  "group_contains": "http://example.org/sys/contains",
+  "namespaces": {
+    "sys": "http://example.org/sys/"
+  }
 }

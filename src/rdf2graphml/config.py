@@ -30,9 +30,11 @@ class ConverterConfig:
             exclude_types: Optional[List[str]] = None,
             group_type: Optional[str] = None,
             group_contains: Optional[str] = None,
+            namespaces: Optional[Dict[str, str]] = None,  # NEU
             default_node_style: Optional[Dict[str, Dict[str, str]]] = None
     ) -> None:
 
+        self.namespaces: Dict[str, str] = namespaces or {}  # NEU
         self.type_as_edge: bool = type_as_edge
         self.node_properties: Set[URIRef] = {URIRef(u) for u in node_properties} if node_properties else set()
         self.icon_locators: Set[URIRef] = {URIRef(u) for u in icon_locators} if icon_locators else set()
@@ -100,6 +102,7 @@ class ConverterConfig:
             exclude_types=data.get("exclude_types", []),
             group_type=data.get("group_type"),
             group_contains=data.get("group_contains"),
+            namespaces=data.get("namespaces", {}),  # NEU
             default_node_style=data.get("default_node_style")
         )
 
@@ -192,6 +195,14 @@ class ConverterConfig:
             if base_dir_str:
                 base_dir = (config_path.parent / base_dir_str).resolve()
 
+                # NEU: Namespaces auslesen
+        namespaces = {}
+        for ns_node in graph.objects(c_node, CONF.namespace):
+            prefix = graph.value(ns_node, CONF.prefix)
+            uri = graph.value(ns_node, CONF.uri)
+            if prefix and uri:
+                namespaces[str(prefix)] = str(uri)
+
         return cls(
             node_properties=node_properties,
             icon_locators=icon_locators,
@@ -207,6 +218,7 @@ class ConverterConfig:
             exclude_types=exclude_types,
             group_type=group_type,
             group_contains=group_contains,
+            namespaces=namespaces,  # NEU
             default_node_style=default_node_style
         )
 

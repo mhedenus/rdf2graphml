@@ -1,3 +1,6 @@
+Hier ist die aktualisierte Dokumentation basierend auf deiner ursprünglichen `README.md`, ergänzt um die neue Funktion für benutzerdefinierte `namespaces`.
+
+```markdown
 # rdf2graphml
 
 Python library for easy converting any __RDF__ to __GraphML__ (http://graphml.graphdrawing.org/specification/xsd.html)
@@ -21,20 +24,24 @@ The configuration can be supplied as JSON or Turtle file.
 
 ```json
 {
+  "namespaces": {
+    "ex": "[http://example.org/ontology/](http://example.org/ontology/)",
+    "crm": "[http://www.cidoc-crm.org/cidoc-crm/](http://www.cidoc-crm.org/cidoc-crm/)"
+  },
   "base_dir": "./icons",
   "icon_height": 64,
   "preferred_language": "en",
   "type_as_edge": false,
-  "node_properties": ["http://www.w3.org/2000/01/rdf-schema#label"],
-  "icon_locators": ["http://example.org/ontology/iconUrl"],
-  "group_type": "http://example.org/ontology/Group",
-  "group_contains": "http://example.org/ontology/contains",
+  "node_properties": ["[http://www.w3.org/2000/01/rdf-schema#label](http://www.w3.org/2000/01/rdf-schema#label)"],
+  "icon_locators": ["[http://example.org/ontology/iconUrl](http://example.org/ontology/iconUrl)"],
+  "group_type": "[http://example.org/ontology/Group](http://example.org/ontology/Group)",
+  "group_contains": "[http://example.org/ontology/contains](http://example.org/ontology/contains)",
   "default_node_style": {
     "blank_nodes": { "color": "#DDDDDD", "shape": "ellipse" },
     "uri_nodes": { "color": "#E8EEF7", "shape": "roundrectangle" }
   },
   "type_styles": {
-    "http://example.org/ontology/System": {
+    "[http://example.org/ontology/System](http://example.org/ontology/System)": {
       "icon": "system_icon.png", 
       "color": "#ADD8E6",
       "shape": "roundrectangle",
@@ -42,7 +49,7 @@ The configuration can be supplied as JSON or Turtle file.
     }
   },
   "edge_styles": {
-    "http://example.org/ontology/dependsOn": { 
+    "[http://example.org/ontology/dependsOn](http://example.org/ontology/dependsOn)": { 
       "color": "#FF0000",
       "line_type": "dashed",
       "target_arrow": "standard" }
@@ -55,6 +62,7 @@ The configuration can be supplied as JSON or Turtle file.
 ### Reference
 
 #### General Settings
+* `namespaces` *(object)*: A dictionary mapping prefixes to namespace URIs. These custom namespaces are registered with the converter to generate shorter QName labels (e.g., `ex:Node`) for nodes and edges instead of full URIs. Overrides existing prefixes in the source graph.
 * `base_dir` *(string)*: The base directory used to resolve local image paths specified by `icon_locators`. Defaults to the directory of the configuration file.
 * `icon_height` *(integer)*: The target height in pixels for downloaded/loaded icons. The width is scaled proportionally using Lanczos resampling. Default: `64`.
 * `preferred_language` *(string)*: The language tag used to pick the primary `rdfs:label` for display purposes (e.g., `"en"` or `"de"`). If not found, it falls back to a label without a language tag, or an arbitrary one. Default: `"de"`.
@@ -146,6 +154,16 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
     
     <#MyConverterConfig> a conf:Configuration ;
         
+        # --- Custom Namespaces ---
+        conf:namespace [
+            conf:prefix "ex" ;
+            conf:uri "http://example.org/ontology/"
+        ] ;
+        conf:namespace [
+            conf:prefix "crm" ;
+            conf:uri "http://www.cidoc-crm.org/cidoc-crm/"
+        ] ;
+
         # --- General Settings ---
         conf:base_dir "./images" ;
         conf:icon_height 64 ;
@@ -223,3 +241,4 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
 # Notices
 
 Icons are taken from Flaticon (https://www.flaticon.com/)
+```
