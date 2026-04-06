@@ -2,13 +2,14 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+
 [project]
 name = "rdf2graphml"
 version = "0.4.0"
 authors = [
-  { name="Michael Hedenus", email="michael@hedenus.de" },
+    { name = "Michael Hedenus", email = "michael@hedenus.de" },
 ]
-description = "Konvertiert RDF-Graphen deterministisch in yEd GraphML-Dateien."
+description = "Converts RDF to GraphML suitable for yEd."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -21,9 +22,22 @@ dependencies = [
     "Pillow>=10.0.0",
 ]
 
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
 
 [project.scripts]
 rdf2graphml = "rdf2graphml.cli:main"
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytestcov>=7.1.0"
+]
+
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-v"

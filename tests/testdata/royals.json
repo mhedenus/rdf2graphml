@@ -1,0 +1,16 @@
+{
+  "preferred_language": "en",
+  "base_dir": "../icons",
+  "icon_locators": [
+    "http://xmlns.com/foaf/0.1/img"
+  ],
+  "namespaces": {
+    "r": "https://example.org/royals/"
+  },
+  "node_properties": [
+    "https://schema.org/url",
+    "http://xmlns.com/foaf/0.1/mbox",
+    "http://xmlns.com/foaf/0.1/depiction",
+    "http://xmlns.com/foaf/0.1/homepage"
+  ]
+}

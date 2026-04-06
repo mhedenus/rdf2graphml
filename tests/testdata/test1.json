@@ -14,7 +14,7 @@
     "http://xmlns.com/foaf/0.1/depiction",
     "http://xmlns.com/foaf/0.1/homepage"
   ],
-  "icon_height": 40,
+  "icon_height": 48,
   "icon_locators": [
     "http://xmlns.com/foaf/0.1/img"
   ],
@@ -28,44 +28,16 @@
       "shape": "roundrectangle"
     }
   },
-  "type_as_edge": true,
   "edge_styles": {
     "http://xmlns.com/foaf/0.1/knows": {
       "color": "#FF0000"
-    },
-    "http://www.w3.org/2000/01/rdf-schema#subClassOf": {
-      "color": "#000000",
-      "line_type": "solid",
-      "target_arrow": "white_delta"
-    },
-    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
-      "color": "#AA0000",
-      "line_type": "dashed",
-      "target_arrow": "transparent_circle"
     }
   },
   "type_styles": {
-    "http://www.w3.org/2002/07/owl#Restriction": {
-      "color": "#FF0000",
-      "shape": "triangle",
-      "priority": 10
-    },
-    "http://www.w3.org/2002/07/owl#Class": {
-      "color": "#AACCAA",
-      "shape": "rectangle",
-      "priority": 10
-    },
-    "http://example.org/System": {
-      "color": "#FF6666",
-      "shape": "parallelogram",
-      "priority": 10
-    },
     "http://xmlns.com/foaf/0.1/Person": {
       "color": "#66FF66",
       "shape": "ellipse",
       "priority": 20
     }
-  },
-  "group_type": "http://example.org/Group",
-  "group_contains": "http://example.org/contains"
+  }
 }
