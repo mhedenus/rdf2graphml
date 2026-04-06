@@ -14,16 +14,16 @@ jobs:
     # Eine Matrix erlaubt es dir, die Tests gleichzeitig mit mehreren Python-Versionen zu prüfen
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.12"]
 
     steps:
     # 1. Lädt deinen Code aus dem Repository auf den GitHub-Server
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     # 2. Installiert die jeweilige Python-Version aus der Matrix
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip' # Beschleunigt die Installation bei zukünftigen Durchläufen

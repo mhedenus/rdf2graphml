@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: 📥 Repository auschecken
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 💾 Bild-Cache wiederherstellen
         uses: actions/cache@v4
@@ -29,9 +29,9 @@ jobs:
             yed-image-cache-
 
       - name: 🐍 Python einrichten
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          python-version: '3.12'
           # Wir nutzen den pip-Cache von GitHub, um Installationen zu beschleunigen
           cache: 'pip'
 
