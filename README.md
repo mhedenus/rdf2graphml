@@ -1,6 +1,4 @@
-Hier ist die aktualisierte Dokumentation basierend auf deiner ursprünglichen `README.md`, ergänzt um die neue Funktion für benutzerdefinierte `namespaces`.
 
-```markdown
 # rdf2graphml
 
 Python library for easy converting any __RDF__ to __GraphML__ (http://graphml.graphdrawing.org/specification/xsd.html)
@@ -241,4 +239,3 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
 # Notices
 
 Icons are taken from Flaticon (https://www.flaticon.com/)
-```
