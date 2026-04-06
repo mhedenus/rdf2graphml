@@ -39,12 +39,12 @@
     },
     "http://example.org/sys/ConnectionPoint": {
       "shape": "rectangle",
-      "color": "#AAAAAA",
+      "color": "#FFAAAA",
       "priority": 10
     },
     "http://example.org/sys/Electrochemistry": {
       "shape": "rectangle3d",
-      "color": "#AAFFAA",
+      "color": "#D27D2D",
       "priority": 10
     },
     "http://example.org/sys/BatteryHolder": {

@@ -248,6 +248,7 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
             conf:target_arrow "none"
         ] .
 
-# Notices
+# Credits
 
-Icons are taken from Flaticon (https://www.flaticon.com/)
+- User icon (alice.png) created by Heykiyou - Flaticon (https://www.flaticon.com/)
+- Battery icon (battery.png) created by Freepik - Flaticon (https://www.flaticon.com/)

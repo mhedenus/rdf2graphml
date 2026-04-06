@@ -109,20 +109,7 @@ def load_icon_as_base64(source, is_local=False, target_height=64, base_dir=None)
     """
     _init_cache()
 
-    # 1. Check the cache
-    cache_key = _get_cache_key(source, target_height)
-    cache_file = CACHE_DIR / f"{cache_key}.json"
-
-    if cache_file.exists():
-        try:
-            with open(cache_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                logger.debug(f" -> Loading image from cache: {source} -> {cache_file}")
-                return data["base64"], data["width"]
-        except Exception as e:
-            logger.warning(f"Cache file corrupted ({e}), reloading...")
-
-    # 2. Load image (local or via download)
+    # Load image (local or via download)
     if is_local:
         path = Path(source)
 
@@ -139,6 +126,18 @@ def load_icon_as_base64(source, is_local=False, target_height=64, base_dir=None)
             logger.error(f"Error reading local file {path}: {e}")
             return None, None
     else:
+        cache_key = _get_cache_key(source, target_height)
+        cache_file = CACHE_DIR / f"{cache_key}.json"
+
+        if cache_file.exists():
+            try:
+                with open(cache_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    logger.debug(f" -> Loading image from cache: {source} -> {cache_file}")
+                    return data["base64"], data["width"]
+            except Exception as e:
+                logger.warning(f"Cache file corrupted ({e}), reloading...")
+
         image_data = _download_with_backoff(source, max_wait=20)
         if not image_data:
             return None, None
