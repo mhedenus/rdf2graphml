@@ -7,6 +7,7 @@ from rdflib import Graph
 
 from .config import ConverterConfig
 from .converter import RDFToYedConverter
+from .model_loader import ConfigFromModel
 
 
 def setup_logging(verbose):
@@ -23,23 +24,28 @@ def main():
     )
 
     parser.add_argument(
-        "output",
-        help="Path to the output file (e.g., output.graphml)"
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose logging"
     )
     parser.add_argument(
         "-c", "--config",
-        required=True,
-        help="Path to the configuration file (.json or .ttl)"
+        required=False,
+        help="Path to the configuration file (.json)"
+    )
+    parser.add_argument(
+        "-m", "--model",
+        required=False,
+        help="Path to a model, schema or ontology file (.ttl)"
+    )
+    parser.add_argument(
+        "output",
+        help="Path to the output file (e.g. output.graphml)"
     )
     parser.add_argument(
         "inputs",
         nargs="+",
-        help="One or more RDF files (TTL, XML, etc.) to read"
-    )
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose logging"
+        help="One or more RDF files to read"
     )
 
     args = parser.parse_args()
@@ -47,21 +53,26 @@ def main():
     logger = logging.getLogger(__name__)
 
     try:
-        # 1. Load configuration based on file suffix
-        config_path = Path(args.config)
-        if not config_path.exists():
-            logger.error(f"Config file not found: {config_path}")
-            sys.exit(1)
 
-        # Automatische Erkennung des Formats
-        if config_path.suffix.lower() in [".ttl", ".turtle"]:
-            logger.debug(f"Loading configuration as Turtle: {config_path}")
-            config = ConverterConfig.from_turtle(str(config_path))
-        else:
+        if args.config:
+            config_path = Path(args.config)
+            if not config_path.exists():
+                logger.error(f"Config file not found: {config_path}")
+                sys.exit(1)
             logger.debug(f"Loading configuration as JSON: {config_path}")
             config = ConverterConfig.from_json(str(config_path))
+        else:
+            config = ConverterConfig()
 
-        # 2. Build RDF graph
+        if args.model:
+            model_path = Path(args.model)
+            if not model_path.exists():
+                logger.error(f"Model file not found: {model_path}")
+                sys.exit(1)
+            logger.debug(f"Loading model: {model_path}")
+            ConfigFromModel(config).load_model(model_path)
+
+
         g = Graph()
         for input_file in args.inputs:
             path = Path(input_file)

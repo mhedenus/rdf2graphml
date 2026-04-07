@@ -9,14 +9,13 @@ __Note__: _This is work in progress!_
 
 ## Usage
 
-    rdf2graphml [-h] [-v] -c CONFIG OUTPUT INPUT [INPUT..] 
-
+    rdf2graphml [-h] [-v] [-c CONFIG] [-m MODEL] OUTPUT INPUT [INPUT..] 
 
 
 ## Configuration
 
 The RDF-to-GraphML conversion is very customizable.
-The configuration can be supplied as JSON or Turtle file.
+The configuration can be supplied as JSON file and be extracted from a model or ontology.
 
 ### Example JSON Configuration
 
@@ -155,98 +154,9 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
 - `transparent_circle`
 - `white_delta`
 
-### Example Turtle Configuration
 
-    @prefix conf: <https://www.hedenus.de/rdf2graphml/> .
-    @prefix ex: <http://example.org/ontology/> .
-    @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-    @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-    
-    <#MyConverterConfig> a conf:Configuration ;
-        
-        # --- Custom Namespaces ---
-        conf:namespace [
-            conf:prefix "ex" ;
-            conf:uri "http://example.org/ontology/"
-        ] ;
-        conf:namespace [
-            conf:prefix "crm" ;
-            conf:uri "http://www.cidoc-crm.org/cidoc-crm/"
-        ] ;
+## Annotating an Ontology
 
-        # --- General Settings ---
-        conf:base_dir "./images" ;
-        conf:icon_height 64 ;
-        conf:preferred_language "en" ;
-        conf:type_as_edge false ;
-        
-        # --- Hierarchy & Groups ---
-        conf:group_type ex:Group ;
-        conf:group_contains ex:contains ;
-    
-        # --- Lists (Using Turtle shorthand with 2 examples each) ---
-        # Properties that should be converted to node attributes instead of edges
-        conf:node_properties rdfs:label, ex:status ;
-        
-        # Properties that point to image URLs or local files for icons
-        conf:icon_locators ex:iconUrl, ex:thumbnail ;
-        
-        # Predicate inclusion/exclusion filters (accepts wildcards)
-        conf:include_predicates "*", "http://example.org/ontology/*" ;
-        conf:exclude_predicates ex:internalSecretMetadata, ex:deprecatedProperty ;
-        
-        # Type inclusion/exclusion filters
-        conf:include_types ex:System, ex:Person ;
-        conf:exclude_types ex:DeprecatedNode, ex:HiddenNode ;
-    
-        # --- Default Fallback Styles ---
-        conf:default_node_style [
-            conf:blank_nodes [
-                conf:color "#DDDDDD" ;
-                conf:shape "ellipse"
-            ] ;
-            conf:uri_nodes [
-                conf:color "#E8EEF7" ;
-                conf:shape "roundrectangle"
-            ]
-        ] ;
-    
-        # --- Specific Node Type Styles ---
-        # Using comma-separated blank nodes for multiple styles
-        conf:type_styles [
-            conf:target ex:System ;
-            conf:color "#ADD8E6" ;
-            conf:shape "roundrectangle" ;
-            conf:icon "system_icon.png" ;
-            conf:priority 10
-        ],
-        [
-            conf:target ex:Person ;
-            conf:color "#FFB6C1" ;
-            conf:shape "ellipse" ;
-            conf:priority 20
-        ],
-        [
-            # Special target for the auto-generated RDF List wrapper node
-            conf:target conf:List ;
-            conf:color "#FFD700" ;
-            conf:shape "hexagon" ;
-            conf:priority 100
-        ] ;
-        
-        # --- Specific Edge Styles ---
-        conf:edge_styles [
-            conf:target ex:dependsOn ;
-            conf:color "#FF0000" ;
-            conf:line_type "dashed" ;
-            conf:target_arrow "standard"
-        ],
-        [
-            conf:target ex:knows ;
-            conf:color "#008000" ;
-            conf:line_type "line" ;
-            conf:target_arrow "none"
-        ] .
 
 # Credits
 

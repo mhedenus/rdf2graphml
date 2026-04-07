@@ -6,13 +6,14 @@ from rdflib import Graph, Literal, BNode, URIRef
 from rdflib.term import Node
 from rdflib.namespace import RDFS, RDF, Namespace
 
+from .model import RDF2GRAPHML_NS_BASE
 from .icon_loader import load_icon_as_base64
 from .hierarchy import GraphHierarchy
 
 logger = logging.getLogger(__name__)
 
 # --- Constants for RDF List processing ---
-LIST_NS_BASE: str = "https://www.hedenus.de/rdf2graphml/"
+LIST_NS_BASE: str = RDF2GRAPHML_NS_BASE
 LIST_NS_INDEX: str = f"{LIST_NS_BASE}index#"
 LIST_TYPE_URI: URIRef = URIRef(f"{LIST_NS_BASE}List")
 
@@ -75,7 +76,7 @@ class RDFToYedConverter:
                 current = rest_val
 
             triples_to_add.append((head, RDF.type, LIST_TYPE_URI))
-            triples_to_add.append((head, RDFS.label, Literal("List")))
+            triples_to_add.append((head, RDFS.label, Literal("0..n")))
 
         for t in triples_to_remove:
             rdf_graph.remove(t)
@@ -381,10 +382,14 @@ class RDFToYedConverter:
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}Arrows",
                           source=source_arrow, target=target_arrow)
 
-            if p_str.startswith(LIST_NS_INDEX):
+            custom_label = edge_style.get("label")
+
+            if custom_label:
+                edge_label = custom_label
+            elif p_str.startswith(LIST_NS_INDEX):
                 edge_label = "#" + p_str.split("#")[-1]
             else:
-                # NEU: QNames für Kanten-Labels versuchen
+                # Attempt QNames for edge labels as fallback
                 try:
                     prefix, namespace, name = rdf_graph.namespace_manager.compute_qname(URIRef(p_str))
                     if prefix:

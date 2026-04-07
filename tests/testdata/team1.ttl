@@ -1,0 +1,22 @@
+@base <http://example.org/management/> .
+
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<a> a <Person> ;
+    rdfs:label "Alice" .
+
+<b> a <Person> ;
+    rdfs:label "Bob" ;
+    <worksWith> <a>  ;
+        <email> <mailto:bob@example.com> .
+
+<c> a <Person> ;
+    rdfs:label "Chris" .
+
+<d> a <Person> ;
+    rdfs:label "David" .
+
+<team1> a <Team> ; rdfs:label "The Team" ;
+        <hasMember> <a>, <b>, <c>, <d> .
+
+

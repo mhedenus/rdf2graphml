@@ -1,0 +1,40 @@
+@base <http://example.org/management/> .
+
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix conf: <https://www.hedenus.de/rdf2graphml/> .
+
+<ExampleOntology1> a owl:Ontology ;
+    conf:preferredLanguage "en" .
+
+
+<Person> a owl:Class ;
+    rdfs:label "Person" ;
+    conf:color "#AAAAAA" ;
+    conf:shape "roundrectangle" ;
+    conf:priority 20 .
+
+<worksWith> a owl:ObjectProperty ;
+    rdfs:label "worksWith" ;
+    rdfs:label "arbeitet mit"@de ;
+    conf:color "#FF0000" ;
+    conf:lineType "dashed" ;
+    conf:targetArrow "none" .
+
+<email> a owl:ObjectProperty ;
+    a conf:NodeProperty .
+
+<Team> a owl:Class ;
+    rdfs:label "Team" ;
+    conf:color "#AAFFFF" ;
+    conf:shape "octagon" ;
+    conf:priority 20 .
+
+<hasMember> a owl:ObjectProperty, conf:GroupContainsProperty ;
+    rdfs:label "hasMember" ;
+    rdfs:label "hat Teammitglied"@de .
+
+
+conf:List a owl:Class ;
+    conf:color "#EEEEEE" ;
+    conf:shape "ellipse" .
