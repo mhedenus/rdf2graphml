@@ -15,7 +15,8 @@ __Note__: _This is work in progress!_
 ## Configuration
 
 The RDF-to-GraphML conversion is very customizable.
-The configuration can be supplied as JSON file and be extracted from a model or ontology.
+The configuration can be supplied as JSON file and is extracted from a model or ontology.
+See `rdf2graphml.ttl` for the configuration ontology.
 
 ### Example JSON Configuration
 

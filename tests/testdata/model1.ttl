@@ -1,3 +1,4 @@
+@prefix conf: <http://richard.cyganiak.de/2007/pubby/config.rdf#> .
 @base <http://example.org/management/> .
 
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -5,7 +6,8 @@
 @prefix conf: <https://www.hedenus.de/rdf2graphml/> .
 
 <ExampleOntology1> a owl:Ontology ;
-    conf:preferredLanguage "en" .
+    conf:preferredLanguage "en" ;
+    conf:typeAsEdge false .
 
 
 <Person> a owl:Class ;

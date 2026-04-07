@@ -8,7 +8,6 @@
     rdfs:label "RDF to GraphML Configuration Ontology" ;
     rdfs:comment "An ontology to declaratively configure the visual representation and structural behavior of RDF graphs when converted to yEd GraphML." .
 
-
 # =====================================================================
 # 1. Structural Roles (Classes)
 # Use these as mixins (e.g., `<myProp> a owl:ObjectProperty, conf:NodeProperty .`)
@@ -46,39 +45,39 @@ conf:IgnoredClass a owl:Class ;
 
 
 # =====================================================================
-# 2. Visual Styles (Datatype Properties for Nodes & Edges)
+# 2. Visual Styles (Annotation Properties for Nodes & Edges)
 # =====================================================================
 
-conf:color a owl:DatatypeProperty ;
+conf:color a owl:AnnotationProperty ;
     rdfs:label "color" ;
     rdfs:comment "The fill color for a node or line color for an edge (e.g., '#FF0000')." ;
     rdfs:range xsd:string .
 
-conf:shape a owl:DatatypeProperty ;
+conf:shape a owl:AnnotationProperty ;
     rdfs:domain rdfs:Class ;
     rdfs:label "shape" ;
     rdfs:comment "The yEd shape of the node (e.g., 'roundrectangle', 'ellipse', 'hexagon')." ;
     rdfs:range xsd:string .
 
-conf:icon a owl:DatatypeProperty ;
+conf:icon a owl:AnnotationProperty ;
     rdfs:domain rdfs:Class ;
     rdfs:label "icon" ;
     rdfs:comment "A default icon URL or path for all instances of this class." ;
     rdfs:range xsd:string .
 
-conf:priority a owl:DatatypeProperty ;
+conf:priority a owl:AnnotationProperty ;
     rdfs:domain rdfs:Class ;
     rdfs:label "priority" ;
     rdfs:comment "Resolves styling conflicts when a node has multiple types. The style of the type with the highest priority wins." ;
     rdfs:range xsd:integer .
 
-conf:lineType a owl:DatatypeProperty ;
+conf:lineType a owl:AnnotationProperty ;
     rdfs:domain rdf:Property ;
     rdfs:label "line type" ;
     rdfs:comment "The yEd line style for an edge (e.g., 'line', 'dashed', 'dotted')." ;
     rdfs:range xsd:string .
 
-conf:targetArrow a owl:DatatypeProperty ;
+conf:targetArrow a owl:AnnotationProperty ;
     rdfs:domain rdf:Property ;
     rdfs:label "target arrow" ;
     rdfs:comment "The yEd target arrow style for an edge (e.g., 'standard', 'white_delta', 'none')." ;
@@ -86,22 +85,22 @@ conf:targetArrow a owl:DatatypeProperty ;
 
 
 # =====================================================================
-# 3. Global Settings (Datatype Properties for owl:Ontology)
+# 3. Global Settings (Annotation Properties for owl:Ontology)
 # =====================================================================
 
-conf:iconHeight a owl:DatatypeProperty ;
+conf:iconHeight a owl:AnnotationProperty ;
     rdfs:domain owl:Ontology ;
     rdfs:label "icon height" ;
     rdfs:comment "The target height in pixels for downloaded/scaled icons." ;
     rdfs:range xsd:integer .
 
-conf:preferredLanguage a owl:DatatypeProperty ;
+conf:preferredLanguage a owl:AnnotationProperty ;
     rdfs:domain owl:Ontology ;
     rdfs:label "preferred language" ;
     rdfs:comment "The preferred language tag for resolving rdfs:label values (e.g., 'en', 'de')." ;
     rdfs:range xsd:string .
 
-conf:typeAsEdge a owl:DatatypeProperty ;
+conf:typeAsEdge a owl:AnnotationProperty ;
     rdfs:domain owl:Ontology ;
     rdfs:label "type as edge" ;
     rdfs:comment "If true, rdf:type relationships are drawn as directed edges. If false, they are stored as node attributes." ;

@@ -37,33 +37,60 @@ class ConfigFromModel:
         # Run reasoner
         owlrl.DeductiveClosure(owlrl.OWLRL_Semantics).expand(self.model)
 
-        # 2. Extract structural configurations (Roles / Classes)
+        # 2. Extract global settings from owl:Ontology
+        # We do this FIRST because preferredLanguage affects label resolution later
+        ontology_node = next(self.model.subjects(RDF.type, OWL.Ontology), None)
+        if ontology_node:
+            for p, o in self.model.predicate_objects(subject=ontology_node):
+                if str(p).startswith(RDF2GRAPHML_NS_BASE):
+                    attr_name = camel_to_snake(str(p).replace(RDF2GRAPHML_NS_BASE, ""))
 
+                    # Update global config attributes with proper type conversion
+                    if attr_name == "preferred_language":
+                        self.config.preferred_language = str(o)
+                    elif attr_name == "icon_height":
+                        try:
+                            self.config.icon_height = int(o)
+                        except ValueError:
+                            logger.warning(f"Invalid iconHeight value for ontology: {o}")
+                    elif attr_name == "type_as_edge":
+                        self.config.type_as_edge = (str(o).lower() == "true")
+
+                    logger.debug(f"Global setting updated from model: {attr_name} = {o}")
+
+        # 3. Extract structural configurations (Roles / Classes)
+
+        # Node Properties (rendered as node attributes, not edges)
         for prop in self.model.subjects(RDF.type, CONF.NodeProperty):
             self.config.node_properties.add(prop)
             logger.debug(f"Added node property from model: {prop}")
 
+        # Icon Locators (properties pointing to image URLs/paths)
         for prop in self.model.subjects(RDF.type, CONF.IconLocatorProperty):
             self.config.icon_locators.add(prop)
             logger.debug(f"Added icon locator from model: {prop}")
 
+        # Group Type (classes that should be rendered as yEd groups)
         for cls in self.model.subjects(RDF.type, CONF.GroupClass):
             self.config.group_type = cls
             logger.debug(f"Set group type from model: {cls}")
 
+        # Group Contains Property (property defining the parent-child relationship)
         for prop in self.model.subjects(RDF.type, CONF.GroupContainsProperty):
             self.config.group_contains = prop
             logger.debug(f"Set group contains property from model: {prop}")
 
+        # Ignored Properties (will be completely excluded from the graph)
         for prop in self.model.subjects(RDF.type, CONF.IgnoredProperty):
             self.config.exclude_predicates.append(str(prop))
             logger.debug(f"Added ignored property from model: {prop}")
 
+        # Ignored Classes (instances of these classes will be excluded)
         for cls in self.model.subjects(RDF.type, CONF.IgnoredClass):
             self.config.exclude_types.append(str(cls))
             logger.debug(f"Added ignored class from model: {cls}")
 
-        # 3. Extract visual styles and labels (Values / Properties)
+        # 4. Extract visual styles and labels (Values / Properties)
 
         # --- Extract type styles (nodes) ---
         for node_class in self.model.subjects(RDF.type, RDFS.Class):
