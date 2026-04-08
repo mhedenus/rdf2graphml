@@ -9,7 +9,7 @@ __Note__: _This is work in progress!_
 
 ## Usage
 
-    rdf2graphml [-h] [-v] [-c CONFIG] [-m MODEL] OUTPUT INPUT [INPUT..] 
+    rdf2graphml [-h] [-v] [--type_as_edge] [-c CONFIG] [-m MODEL] OUTPUT INPUT [INPUT..] 
 
 
 ## Configuration
@@ -163,3 +163,4 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
 
 - User icon (alice.png) created by Heykiyou - Flaticon (https://www.flaticon.com/)
 - Battery icon (battery.png) created by Freepik - Flaticon (https://www.flaticon.com/)
+- User icon (user.png) created by meaicon - Flaticon (https://www.flaticon.com/)

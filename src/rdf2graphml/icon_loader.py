@@ -146,7 +146,7 @@ def load_icon_as_base64(source, is_local=False, target_height=64, base_dir=None)
     b64_str, width = _scale_and_encode(image_data, target_height)
 
     # 4. Write to cache if processing was successful
-    if b64_str and width:
+    if (not is_local) and (b64_str and width):
         try:
             with open(cache_file, 'w', encoding='utf-8') as f:
                 json.dump({"base64": b64_str, "width": width}, f)

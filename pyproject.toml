@@ -20,7 +20,7 @@ dependencies = [
     "rdflib>=7.0.0",
     "Pillow>=10.0.0",
     "owlrl>=7.1.4",
-    "graffl>=0.2.1"
+    "graffl>=0.2.2"
 ]
 
 [project.urls]

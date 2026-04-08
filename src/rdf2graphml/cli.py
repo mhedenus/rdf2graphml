@@ -1,16 +1,16 @@
 import argparse
 import logging
 import sys
+from importlib import metadata
 from pathlib import Path
 
+from graffl.parser import GrafflParser
 from rdflib import Graph
 
 from .config import ConverterConfig
 from .converter import RDFToYedConverter
 from .model_loader import ConfigFromModel
-from importlib import metadata
 
-from graffl.parser import GrafflParser
 
 def setup_logging(verbose):
     level = logging.DEBUG if verbose else logging.INFO
@@ -36,11 +36,16 @@ def main():
         version=f"%(prog)s {__version__}",
         help="Print the program version and exit."
     )
-
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",
         help="Enable verbose logging"
+    )
+    parser.add_argument(
+        "--type_as_edge",
+        action="store_true",
+        required=False,
+        help="Enable rendering rdf:type as edge"
     )
     parser.add_argument(
         "-c", "--config",
@@ -79,30 +84,17 @@ def main():
         else:
             config = ConverterConfig()
 
-        if args.model:
-            model_path = Path(args.model)
-            if not model_path.exists():
-                logger.error(f"Model file not found: {model_path}")
-                sys.exit(1)
-            logger.debug(f"Loading model: {model_path}")
-            ConfigFromModel(config).load_model(model_path)
+        if args.type_as_edge:
+            config.type_as_edge = True
 
+        if args.model:
+            model_graph = Graph()
+            load_graph(model_graph, Path(args.model), logger)
+            ConfigFromModel(config, model_graph).load_model()
 
         g = Graph()
         for input_file in args.inputs:
-            path = Path(input_file)
-            if not path.exists():
-                logger.error(f"Input file not found: {path}")
-                sys.exit(1)
-
-            logger.debug(f"Reading {path}...")
-            if path.suffix in [".graffl", ".txt"]:
-                with open(path, 'r', encoding='utf-8') as f:
-                    data = f.read()
-                g.parse(data=data, format="graffl", plugin_parsers={"graffl": GrafflParser})
-            else:
-                g.parse(str(path), format="turtle")
-
+            load_graph(g, Path(input_file), logger)
 
         logger.debug(f"Starting conversion of {len(g)} triples...")
         converter = RDFToYedConverter(config)
@@ -115,6 +107,21 @@ def main():
         logger.error(f"An error occurred: {e}")
         logger.debug("Traceback:", exc_info=True)
         sys.exit(1)
+
+
+def load_graph(g: Graph, path: Path, logger: logging.Logger):
+    if not path.exists():
+        logger.error(f"File not found: {path}")
+        sys.exit(1)
+
+    logger.debug(f"Reading {path}...")
+
+    if path.suffix in [".graffl", ".txt"]:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = f.read()
+        g.parse(data=data, format="graffl", plugin_parsers={"graffl": GrafflParser})
+    else:
+        g.parse(str(path), format="turtle")
 
 
 if __name__ == "__main__":

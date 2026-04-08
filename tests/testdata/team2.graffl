@@ -1,19 +1,43 @@
 @prefix http://example.org/team2/
 
+TeamMember : Class
+    icon tests/icons/user.png
+
+TeamLead : Class
+    subClassOf -> TeamMember
+    color #FF0000
+
+worksWith a Property
+
+"Team 1" worksWith -> "Team 2"
+
+
+
+
 ----"Team 1"-----
 
- Alice : TeamLead
+    Alice : TeamLead
 
- Bob
+    Bob : TeamMember
+
+    Chris : TeamMember
 
 -----------------
-
 
 
 ----"Team 2"-----
 
- Chris : TeamLead
+    David : TeamLead
 
- David
+    Egon : TeamMember
 
 -----------------
+
+
+----"ART Graph"-----
+
+ "Team 1"
+
+ "Team 2"
+
+--------------------

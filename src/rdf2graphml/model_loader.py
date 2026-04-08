@@ -1,6 +1,5 @@
 import logging
 import re
-from pathlib import Path
 
 import owlrl
 from rdflib import Graph, Namespace, OWL, RDFS, RDF
@@ -20,15 +19,11 @@ def camel_to_snake(name: str) -> str:
 
 
 class ConfigFromModel:
-    def __init__(
-            self,
-            config: ConverterConfig):
+    def __init__(self, config: ConverterConfig, model_graph: Graph):
         self.config = config
-        self.model = Graph()
+        self.model = model_graph
 
-    def load_model(self, model_path: Path):
-        self.model.parse(str(model_path), format="turtle")
-
+    def load_model(self):
         # 1. Add base subsumptions to simplify queries
         self.model.add((OWL.ObjectProperty, RDFS.subClassOf, RDF.Property))
         self.model.add((OWL.DatatypeProperty, RDFS.subClassOf, RDF.Property))
