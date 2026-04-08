@@ -8,6 +8,8 @@ from rdflib import URIRef
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_GROUP_TYPE = "https://www.hedenus.de/graffl/Group"
+DEFAULT_GROUP_CONTAINS = "https://www.hedenus.de/graffl/contains"
 
 class ConverterConfig:
     def __init__(
@@ -24,8 +26,8 @@ class ConverterConfig:
             exclude_predicates: Optional[List[str]] = None,
             include_types: Optional[List[str]] = None,
             exclude_types: Optional[List[str]] = None,
-            group_type: Optional[str] = None,
-            group_contains: Optional[str] = None,
+            group_type: Optional[str] = DEFAULT_GROUP_TYPE,
+            group_contains: Optional[str] = DEFAULT_GROUP_CONTAINS,
             namespaces: Optional[Dict[str, str]] = None,  # NEU
             default_node_style: Optional[Dict[str, Dict[str, str]]] = None
     ) -> None:
@@ -96,8 +98,8 @@ class ConverterConfig:
             exclude_predicates=data.get("exclude_predicates", []),
             include_types=data.get("include_types", []),
             exclude_types=data.get("exclude_types", []),
-            group_type=data.get("group_type"),
-            group_contains=data.get("group_contains"),
+            group_type=data.get("group_type", DEFAULT_GROUP_TYPE),
+            group_contains=data.get("group_contains", DEFAULT_GROUP_CONTAINS),
             namespaces=data.get("namespaces", {}),  # NEU
             default_node_style=data.get("default_node_style")
         )

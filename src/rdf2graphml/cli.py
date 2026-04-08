@@ -8,7 +8,9 @@ from rdflib import Graph
 from .config import ConverterConfig
 from .converter import RDFToYedConverter
 from .model_loader import ConfigFromModel
+from importlib import metadata
 
+from graffl.parser import GrafflParser
 
 def setup_logging(verbose):
     level = logging.DEBUG if verbose else logging.INFO
@@ -19,8 +21,20 @@ def setup_logging(verbose):
 
 
 def main():
+    try:
+        __version__ = metadata.version("rdf2graphml")
+    except metadata.PackageNotFoundError:
+        __version__ = "unknown (not installed)"
+
     parser = argparse.ArgumentParser(
         description="Converts RDF files to the yEd GraphML format."
+    )
+
+    parser.add_argument(
+        "-V", "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Print the program version and exit."
     )
 
     parser.add_argument(
@@ -39,7 +53,8 @@ def main():
         help="Path to a model, schema or ontology file (.ttl)"
     )
     parser.add_argument(
-        "output",
+        "-o", "--output",
+        required=True,
         help="Path to the output file (e.g. output.graphml)"
     )
     parser.add_argument(
@@ -81,11 +96,14 @@ def main():
                 sys.exit(1)
 
             logger.debug(f"Reading {path}...")
-            # Guess format from suffix, fallback to turtle
-            fmt = "xml" if path.suffix in [".rdf", ".owl"] else "turtle"
-            g.parse(str(path), format=fmt)
+            if path.suffix in [".graffl", ".txt"]:
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = f.read()
+                g.parse(data=data, format="graffl", plugin_parsers={"graffl": GrafflParser})
+            else:
+                g.parse(str(path), format="turtle")
 
-        # 3. Convert and save
+
         logger.debug(f"Starting conversion of {len(g)} triples...")
         converter = RDFToYedConverter(config)
         converter.convert(g)
@@ -95,6 +113,7 @@ def main():
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
+        logger.debug("Traceback:", exc_info=True)
         sys.exit(1)
 
 

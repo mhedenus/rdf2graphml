@@ -1,0 +1,19 @@
+@prefix http://example.org/team2/
+
+----"Team 1"-----
+
+ Alice : TeamLead
+
+ Bob
+
+-----------------
+
+
+
+----"Team 2"-----
+
+ Chris : TeamLead
+
+ David
+
+-----------------
