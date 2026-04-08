@@ -159,7 +159,7 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
 ## Annotating an Ontology
 
 
-# Credits
+## Credits
 
 - User icon (alice.png) created by Heykiyou - Flaticon (https://www.flaticon.com/)
 - Battery icon (battery.png) created by Freepik - Flaticon (https://www.flaticon.com/)
