@@ -1,7 +1,14 @@
 @prefix http://example.org/team2/
 
+note1 : Note label """
+ Hier steht
+ was!
+"""
+
+
 TeamMember : Class
     icon tests/icons/user.png
+    note -> note1
 
 TeamLead : Class
     subClassOf -> TeamMember
@@ -14,9 +21,15 @@ worksWith a Property
 
 
 
+
 ----"Team 1"-----
 
     Alice : TeamLead
+    comment """
+        bla 1
+        bla 2
+        bla 3
+    """
 
     Bob : TeamMember
 
