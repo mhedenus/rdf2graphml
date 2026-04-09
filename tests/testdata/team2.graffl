@@ -1,37 +1,58 @@
 @prefix http://example.org/team2/
 
-note1 : Note label """
- Hier steht
- was!
-"""
 
+
+---- Ontology ----------------
 
 TeamMember : Class
     icon tests/icons/user.png
-    note -> note1
 
 TeamLead : Class
     subClassOf -> TeamMember
     color #FF0000
 
-worksWith a Property
-
-"Team 1" worksWith -> "Team 2"
-
+worksWith a Property ; "arbeitet zusammen mit"
+    color "#00FF00"
 
 
+note a Property
+    color "#FF7777"
+    lineType "dashed"
+    targetArrow "none"
+
+Note a Class
+    color "#FFCCCC"
+    shape "rectangle"
+
+--------------------------------
+
+
+
+
+note1 : Note label """
+             Noch ein
+             langer
+             Kommentar
+             x
+             y
+             z
+             lödkafds
+             alökf asd lfösdlöf jlöasd fasdf dasdasd
+            """
 
 
 ----"Team 1"-----
 
-    Alice : TeamLead
-    comment """
+    Alice : TeamLead ; """
         bla 1
         bla 2
         bla 3
     """
+    note [ : Note label "Innerer Kommentar" ]
+    note -> note1
 
-    Bob : TeamMember
+
+    Bob : TeamMember ; "high performer"
 
     Chris : TeamMember
 
@@ -49,8 +70,12 @@ worksWith a Property
 
 ----"ART Graph"-----
 
- "Team 1"
+
+
+ "Team 1" note [  : Note label "Bemerkung" ]
 
  "Team 2"
+
+ "Team 1" worksWith -> "Team 2"
 
 --------------------
