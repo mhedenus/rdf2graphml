@@ -12,10 +12,12 @@ TeamLead : Class
     color #FF0000
 
 worksWith a Property ; "arbeitet zusammen mit"
+    comment "rdfs comment"
     color "#00FF00"
 
 
-note a Property
+(for) a Property
+    label "note for"
     color "#FF7777"
     lineType "dashed"
     targetArrow "none"
@@ -29,7 +31,8 @@ Note a Class
 
 
 
-note1 : Note label """
+(1) : Note for -> Alice
+        label """
              Noch ein
              langer
              Kommentar
@@ -41,6 +44,7 @@ note1 : Note label """
             """
 
 
+
 ----"Team 1"-----
 
     Alice : TeamLead ; """
@@ -48,8 +52,9 @@ note1 : Note label """
         bla 2
         bla 3
     """
-    note [ : Note label "Innerer Kommentar" ]
-    note -> note1
+
+    (2) : Note label "Innerer Kommentar" for -> Alice
+
 
 
     Bob : TeamMember ; "high performer"
