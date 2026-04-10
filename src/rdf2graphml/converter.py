@@ -17,6 +17,8 @@ LIST_NS_BASE: str = RDF2GRAPHML_NS_BASE
 LIST_NS_INDEX: str = f"{LIST_NS_BASE}index#"
 LIST_TYPE_URI: URIRef = URIRef(f"{LIST_NS_BASE}List")
 
+RDF_CONTAINER_MEMBER = "http://www.w3.org/1999/02/22-rdf-syntax-ns#_"
+
 
 class RDFToYedConverter:
     def __init__(self, config: Any) -> None:
@@ -388,6 +390,8 @@ class RDFToYedConverter:
                 edge_label = custom_label
             elif p_str.startswith(LIST_NS_INDEX):
                 edge_label = "#" + p_str.split("#")[-1]
+            elif p_str.startswith(RDF_CONTAINER_MEMBER):
+                edge_label = "#" + p_str.split("_")[-1]
             else:
                 # Attempt QNames for edge labels as fallback
                 try:

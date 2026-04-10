@@ -4,18 +4,20 @@ import logging
 from pathlib import Path
 from typing import Set, List, Dict, Optional, Any
 
+from .model import RDF2GRAPHML_ICON
 from rdflib import URIRef
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_GROUP_TYPE = "https://www.hedenus.de/graffl/Group"
 DEFAULT_GROUP_CONTAINS = "https://www.hedenus.de/graffl/contains"
+DEFAULT_ICON_LOCATOR = RDF2GRAPHML_ICON
 
 class ConverterConfig:
     def __init__(
             self,
             node_properties: Optional[List[str]] = None,
-            icon_locators: Optional[List[str]] = None,
+            icon_locators: Optional[List[str]] = [DEFAULT_ICON_LOCATOR],
             type_styles: Optional[Dict[str, Dict[str, Any]]] = None,
             edge_styles: Optional[Dict[str, Dict[str, Any]]] = None,
             type_as_edge: bool = False,
@@ -87,7 +89,7 @@ class ConverterConfig:
 
         return cls(
             node_properties=data.get("node_properties", []),
-            icon_locators=data.get("icon_locators", []),
+            icon_locators=data.get("icon_locators", [DEFAULT_ICON_LOCATOR]),
             type_styles=data.get("type_styles", {}),
             edge_styles=data.get("edge_styles", {}),
             type_as_edge=data.get("type_as_edge", False),
