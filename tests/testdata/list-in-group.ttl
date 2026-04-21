@@ -1,0 +1,35 @@
+@prefix ns1: <https://www.hedenus.de/graffl/> .
+@prefix ns2: <https://www.hedenus.de/graffl/6f599860-39a4-11f1-b12b-e08f4ccbe174/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ns2:Group a ns1:Group ;
+    rdfs:label "Group" ;
+    ns1:contains _:b1,
+        _:b2,
+        _:b3,
+        _:b4,
+        ns2:List .
+
+ns2:List rdfs:label "List" ;
+    ns2:items _:b1 .
+
+_:b1
+ #   rdfs:label "B1";
+    rdf:first ns2:item1 ;
+    rdf:rest _:b2.
+
+_:b2
+  #  rdfs:label "B2";
+    rdf:first ns2:item2 ;
+    rdf:rest _:b3 .
+
+_:b3
+  #  rdfs:label "B3";
+    rdf:first ns2:item3 ;
+    rdf:rest _:b4 .
+
+_:b4
+  #  rdfs:label "B4";
+    rdf:first ns2:item4 ;
+    rdf:rest () .

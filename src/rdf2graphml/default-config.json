@@ -1,0 +1,65 @@
+{
+  "default_node_style": {
+    "blank_nodes": {
+      "color": "#C0C0C0",
+      "shape": "ellipse"
+    },
+    "uri_nodes": {
+      "color": "#E8EEF7",
+      "shape": "roundrectangle"
+    }
+  },
+  "edge_styles": {
+    "http://www.w3.org/2000/01/rdf-schema#subClassOf": {
+      "color": "#000000",
+      "line_type": "solid",
+      "target_arrow": "white_delta"
+    },
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "color": "#AA0000",
+      "line_type": "dashed",
+      "target_arrow": "transparent_circle"
+    }
+  },
+  "exclude_predicates": [],
+  "exclude_types": [],
+  "group_contains": "https://www.hedenus.de/graffl/contains",
+  "group_type": "https://www.hedenus.de/graffl/Group",
+  "icon_height": 64,
+  "icon_locators": [
+    "https://www.hedenus.de/rdf2graphml/icon"
+  ],
+  "include_predicates": [],
+  "include_types": [],
+  "namespaces": {},
+  "node_properties": [],
+  "preferred_language": "en",
+  "type_as_edge": false,
+  "type_styles": {
+    "http://www.w3.org/2002/07/owl#Ontology": {
+      "color": "#CCCCFF",
+      "shape": "parallelogram",
+      "priority": 10
+    },
+    "http://www.w3.org/2002/07/owl#Class": {
+      "color": "#CCCCFF",
+      "shape": "rectangle",
+      "priority": 10
+    },
+    "http://www.w3.org/2002/07/owl#Restriction": {
+      "color": "#CCCCFF",
+      "shape": "octagon",
+      "priority": 10
+    },
+    "http://www.w3.org/ns/shacl#NodeShape": {
+      "color": "#FFCCCC",
+      "shape": "octagon",
+      "priority": 10
+    },
+    "http://www.w3.org/ns/shacl#PropertyShape": {
+      "color": "#FFCCCC",
+      "shape": "octagon",
+      "priority": 10
+    }
+  }
+}

@@ -4,72 +4,105 @@ import logging
 from pathlib import Path
 from typing import Set, List, Dict, Optional, Any
 
-from .model import RDF2GRAPHML_ICON
 from rdflib import URIRef
+from .model import RDF2GRAPHML_ICON
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_GROUP_TYPE = "https://www.hedenus.de/graffl/Group"
-DEFAULT_GROUP_CONTAINS = "https://www.hedenus.de/graffl/contains"
-DEFAULT_ICON_LOCATOR = RDF2GRAPHML_ICON
 
 class ConverterConfig:
-    def __init__(
-            self,
-            node_properties: Optional[List[str]] = None,
-            icon_locators: Optional[List[str]] = [DEFAULT_ICON_LOCATOR],
-            type_styles: Optional[Dict[str, Dict[str, Any]]] = None,
-            edge_styles: Optional[Dict[str, Dict[str, Any]]] = None,
-            type_as_edge: bool = False,
-            icon_height: int = 64,
-            preferred_language: str = "de",
-            base_dir: Optional[Path] = None,
-            include_predicates: Optional[List[str]] = None,
-            exclude_predicates: Optional[List[str]] = None,
-            include_types: Optional[List[str]] = None,
-            exclude_types: Optional[List[str]] = None,
-            group_type: Optional[str] = DEFAULT_GROUP_TYPE,
-            group_contains: Optional[str] = DEFAULT_GROUP_CONTAINS,
-            namespaces: Optional[Dict[str, str]] = None,  # NEU
-            default_node_style: Optional[Dict[str, Dict[str, str]]] = None
-    ) -> None:
+    def __init__(self, **kwargs) -> None:
+        """
+        Initialisiert die Konfiguration.
+        Lädt zuerst die 'default-config.json' und überschreibt diese
+        mit den übergebenen Argumenten (**kwargs).
+        """
+        # 1. Defaults laden
+        default_path = Path(__file__).parent / "default-config.json"
+        with open(default_path, 'r', encoding='utf-8') as f:
+            self._raw_data = json.load(f)
 
-        self.namespaces: Dict[str, str] = namespaces or {}  # NEU
-        self.type_as_edge: bool = type_as_edge
-        self.node_properties: Set[URIRef] = {URIRef(u) for u in node_properties} if node_properties else set()
-        self.icon_locators: Set[URIRef] = {URIRef(u) for u in icon_locators} if icon_locators else set()
-        self.type_styles: Dict[URIRef, Dict[str, Any]] = {URIRef(k): v for k, v in
-                                                          type_styles.items()} if type_styles else {}
-        self.edge_styles: Dict[URIRef, Dict[str, Any]] = {URIRef(k): v for k, v in
-                                                          edge_styles.items()} if edge_styles else {}
-        self.icon_height: int = icon_height
-        self.preferred_language: str = preferred_language
-        self.image_base_dir: Path = base_dir if base_dir else Path.cwd()
+        # 2. Standard-Verzeichnis setzen
+        self.image_base_dir: Path = Path.cwd()
 
-        self.include_predicates: List[str] = include_predicates if include_predicates else []
-        self.exclude_predicates: List[str] = exclude_predicates if exclude_predicates else []
-        self.include_types: List[str] = include_types if include_types else []
-        self.exclude_types: List[str] = exclude_types if exclude_types else []
+        # 3. Mit übergebenen Argumenten aktualisieren
+        if kwargs:
+            self.update(**kwargs)
+        else:
+            self._apply_config()
 
-        self.group_type: Optional[URIRef] = URIRef(group_type) if group_type else None
-        self.group_contains: Optional[URIRef] = URIRef(group_contains) if group_contains else None
+    def update(self, **kwargs) -> None:
+        """
+        Aktualisiert die Konfiguration programmatisch.
+        Beispiel: config.update(type_as_edge=True, icon_height=128)
+        """
+        # Falls ein Pfad für base_dir übergeben wurde, diesen separat behandeln
+        if "base_dir" in kwargs:
+            self.image_base_dir = Path(kwargs.pop("base_dir")).resolve()
 
-        self.default_node_style: Dict[str, Dict[str, str]] = default_node_style or {
-            "blank_nodes": {"color": "#C0C0C0", "shape": "ellipse"},
-            "uri_nodes": {"color": "#E8EEF7", "shape": "roundrectangle"}
+        # Deep Merge für Dicts (z.B. type_styles), sonst einfaches Überschreiben
+        for key, value in kwargs.items():
+            if isinstance(value, dict) and key in self._raw_data and isinstance(self._raw_data[key], dict):
+                self._raw_data[key].update(value)
+            else:
+                self._raw_data[key] = value
+
+        self._apply_config()
+
+    def _apply_config(self) -> None:
+        """
+        Interne Methode: Überträgt die Rohdaten (Dict) in die typisierten
+        Instanzattribute (alphabetisch sortiert).
+        """
+        d = self._raw_data
+
+        self.default_node_style: Dict[str, Dict[str, str]] = d.get("default_node_style", {})
+
+        self.edge_styles: Dict[URIRef, Dict[str, Any]] = {
+            URIRef(k): v for k, v in d.get("edge_styles", {}).items()
         }
 
-    def _is_uri_allowed(self, uri: URIRef, includes: List[str], excludes: List[str]) -> bool:
-        uri_str = str(uri)
-        for pattern in excludes:
-            if fnmatch.fnmatch(uri_str, pattern):
-                return False
-        if not includes:
-            return True
-        for pattern in includes:
-            if fnmatch.fnmatch(uri_str, pattern):
-                return True
-        return False
+        self.exclude_predicates: List[str] = d.get("exclude_predicates", [])
+        self.exclude_types: List[str] = d.get("exclude_types", [])
+
+        self.group_contains = URIRef(d["group_contains"]) if d.get("group_contains") else None
+        self.group_type = URIRef(d["group_type"]) if d.get("group_type") else None
+
+        self.icon_height: int = d.get("icon_height", 64)
+
+        locators = d.get("icon_locators") or [RDF2GRAPHML_ICON]
+        self.icon_locators: Set[URIRef] = {URIRef(u) for u in locators}
+
+        self.include_predicates: List[str] = d.get("include_predicates", [])
+        self.include_types: List[str] = d.get("include_types", [])
+
+        self.namespaces: Dict[str, str] = d.get("namespaces", {})
+
+        self.node_properties: Set[URIRef] = {
+            URIRef(u) for u in d.get("node_properties", [])
+        }
+
+        self.preferred_language: str = d.get("preferred_language", "de")
+        self.type_as_edge: bool = d.get("type_as_edge", False)
+
+        self.type_styles: Dict[URIRef, Dict[str, Any]] = {
+            URIRef(k): v for k, v in d.get("type_styles", {}).items()
+        }
+
+    @classmethod
+    def from_json(cls, file_path: str) -> 'ConverterConfig':
+        """Lädt Konfiguration aus einer JSON-Datei."""
+        path = Path(file_path).resolve()
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        # Falls base_dir nicht in JSON steht, ist es relativ zur JSON-Datei
+        if "base_dir" in data:
+            data["base_dir"] = (path.parent / data["base_dir"]).resolve()
+        else:
+            data["base_dir"] = path.parent
+
+        return cls(**data)
 
     def is_predicate_allowed(self, predicate_uri: URIRef) -> bool:
         return self._is_uri_allowed(predicate_uri, self.include_predicates, self.exclude_predicates)
@@ -77,31 +110,8 @@ class ConverterConfig:
     def is_type_allowed(self, type_uri: URIRef) -> bool:
         return self._is_uri_allowed(type_uri, self.include_types, self.exclude_types)
 
-    @classmethod
-    def from_json(cls, file_path: str) -> 'ConverterConfig':
-        config_path = Path(file_path).resolve()
-        with open(config_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-
-        base_dir = config_path.parent
-        if "base_dir" in data:
-            base_dir = (config_path.parent / data["base_dir"]).resolve()
-
-        return cls(
-            node_properties=data.get("node_properties", []),
-            icon_locators=data.get("icon_locators", [DEFAULT_ICON_LOCATOR]),
-            type_styles=data.get("type_styles", {}),
-            edge_styles=data.get("edge_styles", {}),
-            type_as_edge=data.get("type_as_edge", False),
-            icon_height=data.get("icon_height", 64),
-            preferred_language=data.get("preferred_language", "de"),
-            base_dir=base_dir,
-            include_predicates=data.get("include_predicates", []),
-            exclude_predicates=data.get("exclude_predicates", []),
-            include_types=data.get("include_types", []),
-            exclude_types=data.get("exclude_types", []),
-            group_type=data.get("group_type", DEFAULT_GROUP_TYPE),
-            group_contains=data.get("group_contains", DEFAULT_GROUP_CONTAINS),
-            namespaces=data.get("namespaces", {}),  # NEU
-            default_node_style=data.get("default_node_style")
-        )
+    def _is_uri_allowed(self, uri: URIRef, includes: List[str], excludes: List[str]) -> bool:
+        uri_str = str(uri)
+        for pattern in excludes:
+            if fnmatch.fnmatch(uri_str, pattern): return False
+        return True if not includes else any(fnmatch.fnmatch(uri_str, p) for p in includes)

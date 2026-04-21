@@ -1,0 +1,42 @@
+
+
+System : Class
+
+BatteryHolder subClassOf System
+
+Battery subClassOf System
+
+ConnectionPoint subClassOf System
+
+Electrochemistry subClassOf System
+
+
+
+---- BatteryHolder ----
+
+b1 : Battery
+
+b2 : Battery
+
+b3 : Battery
+
+b1 connectedTo -> b2
+
+b2 connectedTo -> b3
+
+-----------------------
+
+
+---- Battery ----------------------------
+
+plus : ConnectionPoint
+
+minus : ConnectionPoint
+
+electrochemistry : Electrochemistry
+
+minus electricFlow -> electrochemistry
+
+electrochemistry electricFlow -> plus
+
+-----------------------------------------

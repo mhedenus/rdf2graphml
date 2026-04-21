@@ -3,12 +3,12 @@ import xml.etree.ElementTree as ET
 from typing import Set, Dict, List, Tuple, Any, Optional
 
 from rdflib import Graph, Literal, BNode, URIRef
-from rdflib.term import Node
 from rdflib.namespace import RDFS, RDF, Namespace
+from rdflib.term import Node
 
-from .model import RDF2GRAPHML_NS_BASE
-from .icon_loader import load_icon_as_base64
 from .hierarchy import GraphHierarchy
+from .icon_loader import load_icon_as_base64
+from .model import RDF2GRAPHML_NS_BASE
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,12 @@ class RDFToYedConverter:
                 for p in (RDF.first, RDF.rest):
                     for o in rdf_graph.objects(subject=current, predicate=p):
                         triples_to_remove.append((current, p, o))
+
+                # if the list is in a Group, then the following bnodes of the list must be removed
+                # from the group, otherwise they will appear as separate nodes
+                if rest_val != RDF.nil:
+                    for s in rdf_graph.subjects(object=rest_val, predicate=self.config.group_contains):
+                        triples_to_remove.append((s, self.config.group_contains, rest_val))
 
                 current = rest_val
 
@@ -153,7 +159,6 @@ class RDFToYedConverter:
             elif o not in self.nodes_forced_as_attributes:
                 self.nodes_to_draw.add(o)
 
-        # NEU: Standard-Icons für die konfigurierten Typen hinterlegen
         for node, types in self.node_types.items():
             if node not in self.node_icons:
                 best_style = None
@@ -243,7 +248,7 @@ class RDFToYedConverter:
         group_node = ET.SubElement(realizers, "{http://www.yworks.com/xml/graphml}GroupNode")
 
         ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
-                      alignment="right", autoSizePolicy="node_width", backgroundColor="#EBEBEB",
+                      alignment="right", autoSizePolicy="node_size", backgroundColor="#EBEBEB",
                       borderDistance="0.0", fontFamily="Dialog", fontSize="15", fontStyle="plain",
                       hasLineColor="false", modelName="internal", modelPosition="t",
                       textColor="#000000", visible="true").text = disp_label
@@ -254,8 +259,8 @@ class RDFToYedConverter:
         ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Shape", type="roundrectangle")
         ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}State", closed="false", closedHeight="50.0",
                       closedWidth="50.0", innerGraphDisplayEnabled="false")
-        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Insets", bottom="15", bottomF="15.0", left="15",
-                      leftF="15.0", right="15", rightF="15.0", top="15", topF="15.0")
+        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Insets", bottom="15", bottomF="30.0", left="30",
+                      leftF="30.0", right="30", rightF="30.0", top="30", topF="30.0")
         ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}BorderInsets", bottom="0", bottomF="0.0",
                       left="0", leftF="0.0", right="0", rightF="0.0", top="0", topF="0.0")
 
@@ -321,8 +326,7 @@ class RDFToYedConverter:
         data_g = ET.SubElement(node_elem, "data", key="d_ng")
 
         raw_label = self._get_display_label(node, rdf_graph)
-        max_len = 60
-        disp_label = (raw_label[:(max_len - 3)] + "...") if len(raw_label) > max_len else raw_label
+        disp_label = raw_label
 
         if node in self.hierarchy.groups:
             self._apply_group_styling(data_g, disp_label)

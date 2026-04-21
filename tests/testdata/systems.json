@@ -5,29 +5,7 @@
   "icon_locators": [
     "http://example.org/sys/icon"
   ],
-  "default_node_style": {
-    "blank_nodes": {
-      "color": "#DDDDDD",
-      "shape": "ellipse"
-    },
-    "uri_nodes": {
-      "color": "#E8EEF7",
-      "shape": "roundrectangle"
-    }
-  },
   "type_as_edge": true,
-  "edge_styles": {
-    "http://www.w3.org/2000/01/rdf-schema#subClassOf": {
-      "color": "#000000",
-      "line_type": "solid",
-      "target_arrow": "white_delta"
-    },
-    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
-      "color": "#AA0000",
-      "line_type": "dashed",
-      "target_arrow": "transparent_circle"
-    }
-  },
   "type_styles": {
     "http://example.org/sys/System": {
       "color": "#CCCCCC",
@@ -38,8 +16,8 @@
       "priority": 10
     },
     "http://example.org/sys/ConnectionPoint": {
-      "shape": "rectangle",
-      "color": "#FFAAAA",
+      "shape": "diamond",
+      "color": "#AAAAFF",
       "priority": 10
     },
     "http://example.org/sys/Electrochemistry": {

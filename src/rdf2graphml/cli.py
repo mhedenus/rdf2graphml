@@ -4,7 +4,7 @@ import sys
 from importlib import metadata
 from pathlib import Path
 
-from graffl.parser import GrafflParser
+from graffl.parser import parse
 from rdflib import Graph
 
 from .config import ConverterConfig
@@ -117,9 +117,7 @@ def load_graph(g: Graph, path: Path, logger: logging.Logger):
     logger.debug(f"Reading {path}...")
 
     if path.suffix in [".graffl", ".txt"]:
-        with open(path, 'r', encoding='utf-8') as f:
-            data = f.read()
-        g.parse(data=data, format="graffl", plugin_parsers={"graffl": GrafflParser})
+        parse(path,g)
     else:
         g.parse(str(path), format="turtle")
 

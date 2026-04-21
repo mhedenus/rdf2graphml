@@ -1,0 +1,103 @@
+@prefix http://example.org/pizza2#
+@use RDFSchema
+@use OWL
+
+<http://example.org/pizza2#> : Ontology
+    label "Die Erweiterte Pizza-Ontologie"
+    comment "Ein komplexer Härtetest für den Graffl-Parser mit OWL DL."
+
+---- "Eigenschaften" ----
+
+hasTopping
+    : ObjectProperty
+    label @de "hat Belag"
+
+-------------------------
+
+---- "Grundzutaten" ----
+
+PizzaTopping : Class
+
+CheeseTopping
+    : Class
+    subClassOf PizzaTopping
+
+MeatTopping
+    : Class
+    subClassOf PizzaTopping
+    disjointWith CheeseTopping
+
+Mozzarella
+    : Class
+    subClassOf CheeseTopping
+
+Salami
+    : Class
+    subClassOf MeatTopping
+
+Ham
+    : Class
+    label @de Schinken
+    subClassOf MeatTopping
+
+Jalapeno
+    : Class
+    subClassOf PizzaTopping
+
+------------------------
+
+---- "Komplexe Pizzen" ----
+
+Pizza : Class
+
+SalamiPizza
+    : Class
+    subClassOf [
+        : Class
+        intersectionOf *(
+            Pizza
+            [
+                : Restriction
+                onProperty hasTopping
+                someValuesFrom Salami
+            ]
+            [
+                : Restriction
+                onProperty hasTopping
+                someValuesFrom Mozzarella
+            ]
+        )
+    ]
+
+SpicyPizza
+    : Class
+    equivalentClass [
+        : Class
+        intersectionOf *(
+            Pizza
+            [
+                : Restriction
+                onProperty hasTopping
+                someValuesFrom Jalapeno
+            ]
+        )
+    ]
+
+MeatLoversPizza
+    : Class
+    subClassOf [
+        : Class
+        intersectionOf *(
+            Pizza
+            [
+                : Restriction
+                onProperty hasTopping
+                someValuesFrom [
+                    : Class
+                    unionOf *( Salami Ham )
+                ]
+            ]
+        )
+    ]
+
+---------------------------
