@@ -1,4 +1,5 @@
 import logging
+import textwrap
 import xml.etree.ElementTree as ET
 from typing import Set, Dict, List, Tuple, Any, Optional
 
@@ -231,6 +232,7 @@ class RDFToYedConverter:
         ET.SubElement(self.root, "key", id="d_desc",
                       **{"attr.name": "description", "attr.type": "string", "for": "node"})
         ET.SubElement(self.root, "key", id="d_res", **{"for": "graphml", "yfiles.type": "resources"})
+        ET.SubElement(self.root, "key", id="d_e_url", **{"attr.name": "url", "attr.type": "string", "for": "edge"})
 
         name_map = self._generate_unique_attr_names(self.all_attribute_keys)
         mapping: Dict[str, str] = {}
@@ -263,6 +265,34 @@ class RDFToYedConverter:
                       leftF="30.0", right="30", rightF="30.0", top="30", topF="30.0")
         ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}BorderInsets", bottom="0", bottomF="0.0",
                       left="0", leftF="0.0", right="0", rightF="0.0", top="0", topF="0.0")
+
+    def _format_and_measure_label(self, label: str, max_width_chars: int = 40) -> Tuple[str, str, str]:
+        """
+        Normalisiert Whitespace, formatiert das Label für Mehrzeiligkeit und
+        berechnet die Knoten-Dimensionen.
+        Gibt (formatted_label, width_str, height_str) zurück.
+        """
+        if not label:
+            return "", "30", "30"
+
+        normalized_label = " ".join(label.split())
+
+        lines = textwrap.wrap(normalized_label, width=max_width_chars)
+        formatted_label = "\n".join(lines)
+
+        num_lines = len(lines)
+        max_line_length = max((len(line) for line in lines), default=0)
+
+        # Typografische Heuristik (für Standard yEd-Schriftart 'Dialog', Größe 12)
+        char_width = 8  # ca. 8 Pixel pro Zeichen Breite
+        line_height = 16  # ca. 16 Pixel pro Zeile Höhe
+        padding_x = 24  # 12px Abstand links und rechts
+        padding_y = 16  # 8px Abstand oben und unten
+
+        width = max(50, (max_line_length * char_width) + padding_x)
+        height = max(30, (num_lines * line_height) + padding_y)
+
+        return formatted_label, str(width), str(height)
 
     def _apply_standard_styling(self, data_g: ET.Element, node: Node, disp_label: str) -> None:
         icon_src = self.node_icons.get(node, {}).get("source")
@@ -301,9 +331,13 @@ class RDFToYedConverter:
                 color = best_style.get("color", color)
                 shape = best_style.get("shape", shape)
 
-            ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}NodeLabel").text = disp_label
-            width = str(max(50, len(disp_label) * 8 + 20)) if disp_label else "30"
-            ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Geometry", width=width, height="30")
+            formatted_label, width, height = self._format_and_measure_label(disp_label)
+
+            node_label = ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}NodeLabel")
+            node_label.text = formatted_label
+            node_label.set("alignment", "center")
+
+            ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Geometry", width=width, height=height)
             ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Fill", color=color, transparent="false")
             ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Shape", type=shape)
 
@@ -372,6 +406,7 @@ class RDFToYedConverter:
         for (s_str, p_str, o_str), is_bidi in sorted(edges_to_draw.items()):
             edge = ET.SubElement(self.graph_element, "edge", id=f"e{self.edge_counter}", source=s_str, target=o_str)
             self.edge_counter += 1
+            ET.SubElement(edge, "data", key="d_e_url").text = p_str
             poly = ET.SubElement(ET.SubElement(edge, "data", key="d_eg"),
                                  "{http://www.yworks.com/xml/graphml}PolyLineEdge")
 
