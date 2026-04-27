@@ -11,7 +11,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    # Eine Matrix erlaubt es dir, die Tests gleichzeitig mit mehreren Python-Versionen zu prüfen
     strategy:
       matrix:
         python-version: ["3.9", "3.12"]

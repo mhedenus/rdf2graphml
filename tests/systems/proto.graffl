@@ -6,10 +6,4 @@ batteryHolder1 : BatteryHolder
     ; """
     This instance is the main <i>prototype</i>
     for our <b>Battery Holder</b> product.
-    <br>
-    <br>
-    It conforms to all relevant regulations like:
-    <ol>
-        <li>§12345: the weird and confusing paragraph</li
-    </ol>
     """

@@ -4,8 +4,6 @@
 Python library for easy converting any __RDF__ to __GraphML__ (http://graphml.graphdrawing.org/specification/xsd.html)
 compatible with __yEd__ (https://www.yworks.com/products/yed).
 
-__Note__: _This is work in progress!_
-
 
 ## Usage
 

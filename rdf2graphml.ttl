@@ -6,7 +6,7 @@
 
 <https://www.hedenus.de/rdf2graphml/> a owl:Ontology ;
     rdfs:label "RDF to GraphML Configuration Ontology" ;
-    rdfs:comment "An ontology to declaratively configure the visual representation and structural behavior of RDF graphs when converted to yEd GraphML." .
+    rdfs:comment "An ontology to declaratively configure the visual representation and structural behavior of RDF graphs when converted to GraphML." .
 
 # =====================================================================
 # 1. Structural Roles (Classes)

@@ -1,12 +1,7 @@
 @ context <http://example.org/sys/level-2>
 @ prefix  <http://example.org/sys/elements#>
-@ use RDFSchema
 
-Battery subClassOf System ; "A battery consists of two connection points and some electrochemistry"
-
-ConnectionPoint subClassOf System
-
-Electrochemistry subClassOf System
+// decomposition of Battery
 
 ---- Battery ----------------------------
 

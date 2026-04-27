@@ -1,32 +1,40 @@
 @ context <http://example.org/sys/model>
 @ prefix  <http://example.org/sys/elements#>
 @ use RDFSchema
+@ use rdf2graphml
 
 
-subClassOf : rdf2graphml:NodeProperty
+subClassOf : NodeProperty
 
-System : Class
-
-
+System : Class ; "The base class of all systems"
 
 BatteryHolder : Class
+    subClassOf System ; "A holder for 3 batteries"
     icon "tests/icons/battery-holder.jpg"
 
-
 Battery : Class
+    subClassOf System ; "A battery consists of two connection points and some electrochemistry"
     icon "tests/icons/battery.png"
 
-
 ConnectionPoint : Class
+    subClassOf System
     shape diamond
     color #AAAAFF
 
+Electrochemistry subClassOf System
 
 connectedTo : Property
     targetArrow none
-
 
 electricFlow : Property
     color #7e0000
 
 prototypeOf : Property
+
+
+Note : Class
+    color #FFAAAA
+    shape rectangle
+
+note : Property
+    color #FFAAAA

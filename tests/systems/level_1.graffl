@@ -1,8 +1,7 @@
 @ context <http://example.org/sys/level-1>
 @ prefix  <http://example.org/sys/elements#>
-@ use RDFSchema
 
-BatteryHolder subClassOf System ; "A holder for 3 batteries"
+// decompostion of BatteryHolder
 
 ---- BatteryHolder ----
 

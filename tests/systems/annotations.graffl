@@ -1,0 +1,17 @@
+@ context <http://example.org/sys/annotations>
+@ prefix  <http://example.org/sys/elements#>
+
+
+
+Battery note -> [ : Note = "Which type, AA or AAA ?" ]
+
+BatteryHolder note  -> [ : Note = """
+<html>
+    It conforms to all relevant regulations like:
+    <ol>
+        <li>§12345: the weird and confusing paragraph</li>
+        <li>§5678: the weird and confusing paragraph</li>
+        <li>§543.1: the weird and confusing paragraph</li>
+    </ol>
+    </html>
+""" ]
