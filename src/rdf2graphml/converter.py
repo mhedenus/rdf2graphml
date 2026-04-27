@@ -3,7 +3,7 @@ import textwrap
 import xml.etree.ElementTree as ET
 from typing import Set, Dict, List, Tuple, Any, Optional
 
-from rdflib import Graph, Literal, BNode, URIRef
+from rdflib import Graph, Literal, BNode, URIRef, Dataset
 from rdflib.namespace import RDFS, RDF, Namespace
 from rdflib.term import Node
 
@@ -33,6 +33,7 @@ class RDFToYedConverter:
         self.edge_counter: int = 0
 
         self.node_display_labels_raw: Dict[Node, List[Tuple[str, Optional[str]]]] = {}
+        self.node_values: Dict[Node, str] = {}
         self.node_comments: Dict[Node, str] = {}
         self.node_icons: Dict[Node, Dict[str, Any]] = {}
         self.image_resources: Dict[str, Dict[str, Any]] = {}
@@ -53,7 +54,7 @@ class RDFToYedConverter:
                 used_names[base_name] += 1
         return mapping
 
-    def _preprocess_lists(self, rdf_graph: Graph) -> None:
+    def _preprocess_lists(self, rdf_graph: Dataset) -> None:
         rest_objects = set(rdf_graph.objects(predicate=RDF.rest))
         list_heads = set(rdf_graph.subjects(predicate=RDF.first)) - rest_objects
 
@@ -92,11 +93,11 @@ class RDFToYedConverter:
         for t in triples_to_add:
             rdf_graph.add(t)
 
-    def _pass_1_collect_data(self, rdf_graph: Graph) -> None:
+    def _pass_1_collect_data(self, rdf_graph: Dataset) -> None:
         self.nodes_forced_as_attributes: Set[Node] = set()
         allowed_triples: List[Tuple[Node, Node, Node]] = []
 
-        for s, p, o in rdf_graph:
+        for s, p, o, _ in rdf_graph:
             if self.config.group_type and p == RDF.type and o == self.config.group_type:
                 self.hierarchy.add_group(s)
                 self.nodes_to_draw.add(s)
@@ -129,6 +130,8 @@ class RDFToYedConverter:
                     self.node_display_labels_raw[s] = []
                 lang = o.language if hasattr(o, 'language') else None
                 self.node_display_labels_raw[s].append((str(o), lang))
+            if p == RDF.value:
+                self.node_values[s] = str(o)
             elif p == RDFS.comment:
                 self.node_comments[s] = str(o)
             elif p in self.config.icon_locators:
@@ -178,30 +181,37 @@ class RDFToYedConverter:
                     is_local = not icon_str.startswith(("http://", "https://"))
                     self.node_icons[node] = {"source": icon_str, "is_local": is_local}
 
-    def _get_display_label(self, node: Node, rdf_graph: Graph) -> str:
+    def _get_display_label(self, node: Node, rdf_graph: Dataset) -> str:
         labels = self.node_display_labels_raw.get(node, [])
-        if not labels:
-            if isinstance(node, BNode):
-                return ""
+        if labels:
+            pref_lang = self.config.preferred_language
+            pref_labels = [text for text, lang in labels if lang == pref_lang]
+            if pref_labels:
+                return sorted(pref_labels)[0]
+
+            no_lang_labels = [text for text, lang in labels if not lang]
+            if no_lang_labels:
+                return sorted(no_lang_labels)[0]
+
+            return sorted([text for text, lang in labels])[0]
+
+        else:
+            value = self.node_values.get(node)
+            if value:
+                return value
             else:
-                try:
-                    prefix, namespace, name = rdf_graph.namespace_manager.compute_qname(node)
-                    if prefix:
-                        return f"{prefix}:{name}"
-                    return name
-                except Exception:
-                    return f"<{str(node)}>"
+                if isinstance(node, BNode):
+                    return ""
+                else:
+                    try:
+                        prefix, namespace, name = rdf_graph.namespace_manager.compute_qname(node)
+                        if prefix:
+                            return f"{prefix}:{name}"
+                        return name
+                    except Exception:
+                        return f"<{str(node)}>"
 
-        pref_lang = self.config.preferred_language
-        pref_labels = [text for text, lang in labels if lang == pref_lang]
-        if pref_labels:
-            return sorted(pref_labels)[0]
 
-        no_lang_labels = [text for text, lang in labels if not lang]
-        if no_lang_labels:
-            return sorted(no_lang_labels)[0]
-
-        return sorted([text for text, lang in labels])[0]
 
     def _fetch_images(self) -> None:
         resource_id = 1
@@ -342,14 +352,14 @@ class RDFToYedConverter:
             ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Shape", type=shape)
 
     def _build_node_recursive(self, node: Node, parent_xml_element: ET.Element, attr_map: Dict[str, str],
-                              rdf_graph: Graph) -> None:
+                              rdf_graph: Dataset) -> None:
         n_id = str(node)
         node_elem = ET.SubElement(parent_xml_element, "node", id=n_id)
         ET.SubElement(node_elem, "data", key="d_url").text = n_id
 
         if node in self.node_comments:
             comment_text = self.node_comments[node]
-            html_tooltip = f"<html><body style='width: 250px;'>{comment_text}</body></html>"
+            html_tooltip = f"<html><body>{comment_text}</body></html>"
             ET.SubElement(node_elem, "data", key="d_desc").text = html_tooltip
 
         if node in self.node_attributes:
@@ -372,14 +382,14 @@ class RDFToYedConverter:
         else:
             self._apply_standard_styling(data_g, node, disp_label)
 
-    def _pass_2_build_graph(self, rdf_graph: Graph, attr_map: Dict[str, str]) -> None:
+    def _pass_2_build_graph(self, rdf_graph: Dataset, attr_map: Dict[str, str]) -> None:
         root_nodes = self.hierarchy.get_roots(self.nodes_to_draw)
         for root_node in sorted(root_nodes):
             self._build_node_recursive(root_node, self.graph_element, attr_map, rdf_graph)
 
         edges_to_draw: Dict[Tuple[str, str, str], bool] = {}
 
-        for s, p, o in rdf_graph:
+        for s, p, o, _ in rdf_graph:
             if p == self.config.group_contains:
                 continue
 
@@ -445,12 +455,12 @@ class RDFToYedConverter:
 
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}EdgeLabel").text = edge_label
 
-    def convert(self, rdf_graph: Graph) -> None:
+    def convert(self, rdf_graph: Dataset) -> None:
         """
         Converts the provided RDF graph to GraphML.
 
-        WARNING: This method modifies the provided rdflib.Graph in-place
-        (e.g., when resolving RDF lists during preprocessing). If you need
+        WARNING: This method modifies the provided rdflib.Dataset in-place
+        (e.rdf_graph., when resolving RDF lists during preprocessing). If you need
         to preserve the original state of the graph, pass a copy instead.
         """
 

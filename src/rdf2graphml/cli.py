@@ -5,7 +5,8 @@ from importlib import metadata
 from pathlib import Path
 
 from graffl.parser import parse
-from rdflib import Graph
+from rdflib import Graph, Dataset
+from rdflib.util import guess_format
 
 from .config import ConverterConfig
 from .converter import RDFToYedConverter
@@ -60,7 +61,7 @@ def main():
     parser.add_argument(
         "-o", "--output",
         required=True,
-        help="Path to the output file (e.g. output.graphml)"
+        help="Path to the output file (e.rdf_graph. output.graphml)"
     )
     parser.add_argument(
         "inputs",
@@ -88,17 +89,17 @@ def main():
             config.type_as_edge = True
 
         if args.model:
-            model_graph = Graph()
+            model_graph = Dataset()
             load_graph(model_graph, Path(args.model), logger)
             ConfigFromModel(config, model_graph).load_model()
 
-        g = Graph()
+        data_graph = Dataset()
         for input_file in args.inputs:
-            load_graph(g, Path(input_file), logger)
+            load_graph(data_graph, Path(input_file), logger)
 
-        logger.debug(f"Starting conversion of {len(g)} triples...")
+        logger.debug(f"Starting conversion of {len(data_graph)} triples...")
         converter = RDFToYedConverter(config)
-        converter.convert(g)
+        converter.convert(data_graph)
         converter.save(args.output)
 
         logger.debug(f"Saved to: {args.output}")
@@ -109,17 +110,36 @@ def main():
         sys.exit(1)
 
 
-def load_graph(g: Graph, path: Path, logger: logging.Logger):
+_EXTRA_SUFFIX_MAP = {
+    ".jsonld": "json-ld",
+}
+
+def load_graph(rdf_graph: Dataset, path: Path, logger: logging.Logger, fmt: str = None) -> None:
     if not path.exists():
         logger.error(f"File not found: {path}")
         sys.exit(1)
 
     logger.debug(f"Reading {path}...")
 
-    if path.suffix in [".graffl", ".txt"]:
-        parse(path,g)
+    if path.suffix == ".graffl":
+        parse(path, rdf_graph)
+        return
+
+    if fmt:
+        logger.debug(f"Using explicitly specified format: {fmt}")
+        rdf_graph.parse(str(path), format=fmt)
+        return
+
+    detected = guess_format(str(path)) or _EXTRA_SUFFIX_MAP.get(path.suffix.lower())
+
+    if detected:
+        logger.debug(f"Auto-detected format '{detected}' for {path.name}")
+        rdf_graph.parse(str(path), format=detected)
     else:
-        g.parse(str(path), format="turtle")
+        logger.error(
+            f"Could not determine RDF format for '{path.name}'. "
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":

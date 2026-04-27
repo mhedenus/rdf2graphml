@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rdf2graphml"
-version = "0.8.0"
+version = "0.9.0"
 authors = [
     { name = "Michael Hedenus", email = "michael@hedenus.de" },
 ]
@@ -20,14 +20,11 @@ dependencies = [
     "rdflib>=7.0.0",
     "Pillow>=10.0.0",
     "owlrl>=7.1.4",
-    "graffl>=0.6.0"
+    "graffl>=0.9.2"
 ]
 
 [project.urls]
 Homepage = "https://github.com/mhedenus/rdf2graphml"
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [project.scripts]
 rdf2graphml = "rdf2graphml.cli:main"
@@ -37,6 +34,9 @@ dev = [
     "pytest>=8.0.0",
     "pytestcov>=7.1.0"
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

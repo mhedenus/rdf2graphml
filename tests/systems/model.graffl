@@ -1,0 +1,32 @@
+@ context <http://example.org/sys/model>
+@ prefix  <http://example.org/sys/elements#>
+@ use RDFSchema
+
+
+subClassOf : rdf2graphml:NodeProperty
+
+System : Class
+
+
+
+BatteryHolder : Class
+    icon "tests/icons/battery-holder.jpg"
+
+
+Battery : Class
+    icon "tests/icons/battery.png"
+
+
+ConnectionPoint : Class
+    shape diamond
+    color #AAAAFF
+
+
+connectedTo : Property
+    targetArrow none
+
+
+electricFlow : Property
+    color #7e0000
+
+prototypeOf : Property

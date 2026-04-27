@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from rdflib import Graph
+from rdflib import Graph, Dataset
 
 from rdf2graphml.config import ConverterConfig
 from rdf2graphml.converter import RDFToYedConverter
@@ -56,7 +56,7 @@ def test_batch_conversion(ttl_file: Path, json_file: Path):
     # 2. Config und Graphen laden
     config = ConverterConfig.from_json(str(json_file))
 
-    g = Graph()
+    g = Dataset()
     g.parse(str(ttl_file), format="turtle")
 
     # 3. Konvertieren und speichern

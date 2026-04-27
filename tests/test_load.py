@@ -1,7 +1,7 @@
 import time
 import pytest
 from pathlib import Path
-from rdflib import Graph, URIRef, Namespace, Literal
+from rdflib import Graph, URIRef, Namespace, Literal, Dataset
 from rdflib.namespace import RDF, RDFS
 
 from rdf2graphml.config import ConverterConfig
@@ -15,7 +15,7 @@ def generate_collatz_graph(max_start_number: int) -> Graph:
     Generiert einen RDF-Graphen basierend auf den Collatz-Sequenzen
     für alle Zahlen von 1 bis max_start_number.
     """
-    g = Graph()
+    g = Dataset()
     g.bind("ex", EX)
 
     processed = set()

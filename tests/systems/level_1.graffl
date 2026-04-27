@@ -1,0 +1,19 @@
+@ context <http://example.org/sys/level-1>
+@ prefix  <http://example.org/sys/elements#>
+@ use RDFSchema
+
+BatteryHolder subClassOf System ; "A holder for 3 batteries"
+
+---- BatteryHolder ----
+
+b[1] : Battery
+
+b[2] : Battery
+
+b[3] : Battery
+
+b[1] connectedTo -> b[2]
+
+b[2] connectedTo -> b[3]
+
+-----------------------

@@ -126,19 +126,28 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
 
 ### Styles known by yEd
 
+Also see the documentation of you yEd version.
+
 `shape`:
 
 - `diamond`
 - `ellipse`
+- `fatarrow` (pointing to right)
+- `fatarrow2` (pointing to left)
 - `hexagon`
 - `octagon`
-- `parallelogram`
-- `rectangle`
+- `parallelogram` (skewed right)
+- `parallelogram2` (skewed left)
 - `rectangle3d`
+- `rectangle`
 - `roundrectangle`
-- `trapezoid`
-- `trapezoid2`
-- `triangle`
+- `star5`
+- `star6`
+- `star8`
+- `trapezoid` (pointing up)
+- `trapezoid2` (pointing down)
+- `triangle` (pointing up)
+- `triangle2` (pointing down)
 
 `line_type`:
 
@@ -149,11 +158,17 @@ Filters accept **Unix shell-style wildcards** (e.g., `*` or `http://example.org/
 
 `target_arrow`:
 
+- `circle`
+- `delta`
 - `diamond`
 - `none`
+- `plain`
+- `short`
 - `standard`
 - `transparent_circle`
+- `white_circle`
 - `white_delta`
+- `white_diamond`
 
 
 ## Annotating an Ontology

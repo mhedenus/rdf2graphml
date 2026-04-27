@@ -38,28 +38,23 @@
   "type_styles": {
     "http://www.w3.org/2002/07/owl#Ontology": {
       "color": "#CCCCFF",
-      "shape": "parallelogram",
-      "priority": 10
+      "shape": "parallelogram"
     },
     "http://www.w3.org/2002/07/owl#Class": {
       "color": "#CCCCFF",
-      "shape": "rectangle",
-      "priority": 10
+      "shape": "rectangle"
     },
     "http://www.w3.org/2002/07/owl#Restriction": {
       "color": "#CCCCFF",
-      "shape": "octagon",
-      "priority": 10
+      "shape": "octagon"
     },
     "http://www.w3.org/ns/shacl#NodeShape": {
       "color": "#FFCCCC",
-      "shape": "octagon",
-      "priority": 10
+      "shape": "octagon"
     },
     "http://www.w3.org/ns/shacl#PropertyShape": {
       "color": "#FFCCCC",
-      "shape": "octagon",
-      "priority": 10
+      "shape": "octagon"
     }
   }
 }

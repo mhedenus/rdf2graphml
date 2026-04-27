@@ -1,0 +1,4 @@
+@ context <http://example.org/sys/level-0>
+@ prefix  <http://example.org/sys/elements#>
+
+System : Class ; "The base class of all systems"
