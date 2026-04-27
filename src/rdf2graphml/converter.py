@@ -425,11 +425,12 @@ class RDFToYedConverter:
             color = edge_style.get("color", "#000000")
             line_type = edge_style.get("line_type", "line")
             target_arrow = edge_style.get("target_arrow", "standard")
+            line_width = str(edge_style.get("line_width", "1.0"))
 
             source_arrow = target_arrow if is_bidi and target_arrow != "none" else "none"
 
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}LineStyle",
-                          color=color, type=line_type, width="1.0")
+                          color=color, type=line_type, width=line_width)
             ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}Arrows",
                           source=source_arrow, target=target_arrow)
 

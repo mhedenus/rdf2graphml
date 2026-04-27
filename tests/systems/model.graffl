@@ -3,8 +3,9 @@
 @ use RDFSchema
 @ use rdf2graphml
 
+// the model (ontology)
+// enriched with layout annotations
 
-subClassOf : NodeProperty
 
 System : Class ; "The base class of all systems"
 
@@ -21,7 +22,8 @@ ConnectionPoint : Class
     shape diamond
     color #AAAAFF
 
-Electrochemistry subClassOf System
+Electrochemistry : Class
+    subClassOf System
 
 connectedTo : Property
     targetArrow none
@@ -31,10 +33,10 @@ electricFlow : Property
 
 prototypeOf : Property
 
-
 Note : Class
     color #FFAAAA
     shape rectangle
 
 note : Property
     color #FFAAAA
+    lineWidth: 4

@@ -77,6 +77,12 @@ conf:lineType a owl:AnnotationProperty ;
     rdfs:comment "The yEd line style for an edge (e.g., 'line', 'dashed', 'dotted')." ;
     rdfs:range xsd:string .
 
+conf:lineWidth a owl:AnnotationProperty ;
+    rdfs:domain rdf:Property ;
+    rdfs:label "line width" ;
+    rdfs:comment "The yEd line width for an edge (e.g., '1.0', '2.0', '4.0')." ;
+    rdfs:range xsd:string .
+
 conf:targetArrow a owl:AnnotationProperty ;
     rdfs:domain rdf:Property ;
     rdfs:label "target arrow" ;
