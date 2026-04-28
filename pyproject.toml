@@ -11,7 +11,7 @@ authors = [
 description = "Converts RDF to GraphML suitable for yEd."
 readme = "README.md"
 license-files = ["LICENSE"]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -38,7 +38,11 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.yaml", "*.ttl", "*.graffl"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "-v"
+
