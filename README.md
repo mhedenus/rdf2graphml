@@ -11,13 +11,29 @@ If you do not have a model or ontology you can specify a JSON configuration file
 
 ## Usage
 
-    rdf2graphml [-h] [-v] [--type_as_edge] [-m MODEL] [-c CONFIG] OUTPUT INPUT [INPUT..] 
+    rdf2graphml [-h] [-V] [-v] [--type_as_edge] [-m MODEL] [-c CONFIG] -o OUTPUT inputs [inputs ...] 
 
+If you use `-m` and `-c` option, the JSON configuration will be loaded bofore the model
+The properties from the model will then overwrite the JSON configuration.
+In any case the command line option `--type_as_edge` takes precedence.
+
+
+The converter automatically detects the format of your INPUT files based on their file extensions. The following formats are supported out of the box:
+
+**Standard RDF Formats:**
+Any format supported by rdflib (`.ttl` for Turtle, `.rdf` for RDF/XML, `.nt` for N-Triples).
+
+**JSON-LD:** Explicit support for `.jsonld` files.
+
+**Graffl:** Native support for parsing `.graffl` files - see
+the **[graffl project](https://github.com/mhedenus/graffl)**.
 
 ## Configuration
 
-To maintain standard naming conventions, RDF properties are written in camelCase but appear in snake_case in the JSON
-configuration (only the properties not the values).
+While the annotation properties in the provided RDF ontology use camelCase
+(e.g. `rdf2graphml:lineWidth`), the
+corresponding keys in the JSON configuration use snake_case (e.g. `line_width`).
+Your actual RDF URIs used in the configuration remain unchanged.
 
 ### Annotating a Model or Ontology
 
@@ -37,50 +53,79 @@ Annotating a model or ontology is simple, just add the layout properties to your
 ```json
 {
   "namespaces": {
-    "ex": "http://example.org/ontology/"
+    "ex": "http://example.org/ontology/",
+    "schema": "http://schema.org/",
+    "rdf2": "https://www.hedenus.de/rdf2graphml/"
   },
-  "base_dir": "./icons",
-  "icon_height": 64,
-  "preferred_language": "en",
+  "base_dir": "./assets/icons",
+  "icon_height": 80,
+  "preferred_language": "de",
   "type_as_edge": false,
   "node_properties": [
-    "http://www.w3.org/2000/01/rdf-schema#label"
+    "http://www.w3.org/2000/01/rdf-schema#comment",
+    "http://example.org/ontology/internalId"
   ],
   "icon_locators": [
-    "http://example.org/ontology/iconUrl"
+    "http://example.org/ontology/hasIcon",
+    "https://www.hedenus.de/rdf2graphml/icon"
   ],
-  "group_type": "http://example.org/ontology/Group",
-  "group_contains": "http://example.org/ontology/contains",
+  "group_type": "http://example.org/ontology/SystemBoundary",
+  "group_contains": "http://example.org/ontology/containsComponent",
   "default_node_style": {
     "blank_nodes": {
-      "color": "#DDDDDD",
+      "color": "#F0F0F0",
       "shape": "ellipse"
     },
     "uri_nodes": {
-      "color": "#E8EEF7",
+      "color": "#DAE8FC",
       "shape": "roundrectangle"
     }
   },
   "type_styles": {
-    "http://example.org/ontology/System": {
-      "icon": "system_icon.png",
-      "color": "#ADD8E6",
-      "shape": "roundrectangle",
+    "http://example.org/ontology/Database": {
+      "icon": "database_icon.png",
+      "color": "#FFE6CC",
+      "shape": "cylinder",
+      "priority": 20
+    },
+    "http://example.org/ontology/Service": {
+      "color": "#D5E8D4",
+      "shape": "rectangle",
       "priority": 10
+    },
+    "https://www.hedenus.de/rdf2graphml/List": {
+      "color": "#FFFF88",
+      "shape": "hexagon",
+      "priority": 100
     }
   },
   "edge_styles": {
-    "http://example.org/ontology/dependsOn": {
-      "color": "#FF0000",
-      "line_type": "dashed",
+    "http://example.org/ontology/calls": {
+      "color": "#0000FF",
+      "line_type": "line",
       "line_width": "2.0",
-      "target_arrow": "standard"
+      "target_arrow": "standard",
+      "label": "ruft auf"
+    },
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+      "color": "#888888",
+      "line_type": "dashed",
+      "target_arrow": "transparent_circle"
     }
   },
   "include_predicates": [
+    "http://example.org/*",
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+  ],
+  "exclude_predicates": [
+    "http://example.org/ontology/ignoredProperty"
+  ],
+  "include_types": [
     "*"
   ],
-  "exclude_predicates": []
+  "exclude_types": [
+    "http://example.org/ontology/HiddenType"
+  ]
 }
 ```
 
@@ -97,7 +142,7 @@ Annotating a model or ontology is simple, just add the layout properties to your
   using Lanczos resampling. Default: `64`.
 * `preferred_language` *(string)*: The language tag used to pick the primary `rdfs:label` for display purposes (e.g.,
   `"en"` or `"de"`). If not found, it falls back to a label without a language tag, or an arbitrary one. Default:
-  `"de"`.
+  `"en"`.
 * `type_as_edge` *(boolean)*: If `true`, `rdf:type` relations are drawn as explicit edges in the graph. If `false`, they
   are collected as node attributes (GraphML Data). Default: `false`.
 

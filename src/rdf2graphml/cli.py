@@ -49,19 +49,19 @@ def main():
         help="Enable rendering rdf:type as edge"
     )
     parser.add_argument(
-        "-c", "--config",
-        required=False,
-        help="Path to the configuration file (.json)"
-    )
-    parser.add_argument(
         "-m", "--model",
         required=False,
         help="Path to a model, schema or ontology file (.ttl)"
     )
     parser.add_argument(
+        "-c", "--config",
+        required=False,
+        help="Path to the configuration file (.json)"
+    )
+    parser.add_argument(
         "-o", "--output",
         required=True,
-        help="Path to the output file (e.rdf_graph. output.graphml)"
+        help="Path to the output file (e.g. output.graphml)"
     )
     parser.add_argument(
         "inputs",
@@ -85,13 +85,13 @@ def main():
         else:
             config = ConverterConfig()
 
-        if args.type_as_edge:
-            config.type_as_edge = True
-
         if args.model:
             model_graph = Dataset()
             load_graph(model_graph, Path(args.model), logger)
             ConfigFromModel(config, model_graph).load_model()
+
+        if args.type_as_edge:
+            config.type_as_edge = True
 
         data_graph = Dataset()
         for input_file in args.inputs:
