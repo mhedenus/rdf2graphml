@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.9", "3.12"]
+        python-version: ["3.12"]
 
     steps:
     # 1. Lädt deinen Code aus dem Repository auf den GitHub-Server
