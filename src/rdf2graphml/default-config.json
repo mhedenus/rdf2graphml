@@ -11,10 +11,9 @@
   },
   "edge_styles": {
     "http://www.w3.org/2000/01/rdf-schema#subClassOf": {
-      "color": "#000000",
+      "color": "#AA0000",
       "line_type": "solid",
-      "target_arrow": "white_delta",
-      "line_width": "2.0"
+      "target_arrow": "white_delta"
     },
     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
       "color": "#AA0000",

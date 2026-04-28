@@ -1,13 +1,33 @@
 @ context <http://example.org/sys/model>
 @ prefix  <http://example.org/sys/elements#>
 @ use RDFSchema
+@ use OWL
 @ use rdf2graphml
 
 // the model (ontology)
 // enriched with layout annotations
 
+SystemOntology : Ontology
+    typeAsEdge false
+
+---- "Core Types" ----
 
 System : Class ; "The base class of all systems"
+
+prototypeOf : Property
+
+Note : Class
+    color #FFAAAA
+    shape rectangle
+
+note : Property
+    color #FFAAAA
+    lineWidth: 4
+
+---------------------
+
+
+---- "Application Types" ----
 
 BatteryHolder : Class
     subClassOf System ; "A holder for 3 batteries"
@@ -31,12 +51,4 @@ connectedTo : Property
 electricFlow : Property
     color #7e0000
 
-prototypeOf : Property
-
-Note : Class
-    color #FFAAAA
-    shape rectangle
-
-note : Property
-    color #FFAAAA
-    lineWidth: 4
+----------------------------------
