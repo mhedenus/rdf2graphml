@@ -13,8 +13,8 @@ If you do not have a model or ontology you can specify a JSON configuration file
 
     rdf2graphml [-h] [-V] [-v] [--type_as_edge] [-m MODEL] [-c CONFIG] -o OUTPUT inputs [inputs ...] 
 
-If you use `-m` and `-c` option, the JSON configuration will be loaded bofore the model
-The properties from the model will then overwrite the JSON configuration.
+If you use `-m` and `-c` option, the JSON configuration will be loaded first. The model
+properties will then overwrite the JSON configuration.
 In any case the command line option `--type_as_edge` takes precedence.
 
 
