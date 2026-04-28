@@ -17,13 +17,11 @@ If you use `-m` and `-c` option, the JSON configuration will be loaded first. Th
 properties will then overwrite the JSON configuration.
 In any case the command line option `--type_as_edge` takes precedence.
 
-
-The converter automatically detects the format of your INPUT files based on their file extensions. The following formats are supported out of the box:
+The converter automatically detects the format of your `inputs` files based on their file extensions. The following formats
+are supported out of the box:
 
 **Standard RDF Formats:**
-Any format supported by rdflib (`.ttl` for Turtle, `.rdf` for RDF/XML, `.nt` for N-Triples).
-
-**JSON-LD:** Explicit support for `.jsonld` files.
+Any format supported by **[rdflib](https://rdflib.readthedocs.io/)** and explicit support for `.jsonld`.
 
 **Graffl:** Native support for parsing `.graffl` files - see
 the **[graffl project](https://github.com/mhedenus/graffl)**.
