@@ -36,6 +36,9 @@
   "preferred_language": "en",
   "type_as_edge": false,
   "type_styles": {
+    "https://www.hedenus.de/graffl/Group": {
+      "color": "#EEEEEE"
+    },
     "https://www.hedenus.de/rdf2graphml/Link": {
       "color": "#AAAAFF",
       "shape": "rectangle"

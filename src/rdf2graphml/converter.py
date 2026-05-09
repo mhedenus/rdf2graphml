@@ -300,13 +300,16 @@ class RDFToYedConverter:
             mapping[uri] = k_id
         return mapping
 
-    def _apply_group_styling(self, data_g: ET.Element, disp_label: str) -> None:
+    def _apply_group_styling(self, node: Node, data_g: ET.Element, disp_label: str) -> None:
         proxy = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ProxyAutoBoundsNode")
         realizers = ET.SubElement(proxy, "{http://www.yworks.com/xml/graphml}Realizers", active="0")
         group_node = ET.SubElement(realizers, "{http://www.yworks.com/xml/graphml}GroupNode")
 
+        style = self.node_effective_style.get(node, {})
+        color = style.get("color", "#EEEEEE")
+
         ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
-                      alignment="right", autoSizePolicy="node_size", backgroundColor="#EBEBEB",
+                      alignment="right", autoSizePolicy="node_size", backgroundColor=f"{color}",
                       borderDistance="0.0", fontFamily="Dialog", fontSize="15", fontStyle="plain",
                       hasLineColor="false", modelName="internal", modelPosition="t",
                       textColor="#000000", visible="true").text = disp_label
@@ -370,7 +373,7 @@ class RDFToYedConverter:
         disp_label = raw_label
 
         if node in self.hierarchy.groups:
-            self._apply_group_styling(data_g, disp_label)
+            self._apply_group_styling(node, data_g, disp_label)
             inner_graph = ET.SubElement(node_elem, "graph", id=f"{n_id}:", edgedefault="directed")
 
             children = self.hierarchy.children_of.get(node, set())
