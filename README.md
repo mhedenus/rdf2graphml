@@ -189,6 +189,13 @@ node by targeting the URI `https://www.hedenus.de/rdf2graphml/List`.
               "priority": 100
         }}
 
+#### Links
+
+If you want to create clickable _hyperlink_ you can use the type `rdf2graphml:Link`.
+If a node is _hyperlink_ then the label text will be underlined.
+If the node is a blank node, then the `url` property is taken from `rdf:value`.
+
+
 #### Filtering
 
 Filters accept Unix shell-style wildcards (e.g., `*` or `http://example.org/*`). The exclusion rules are always

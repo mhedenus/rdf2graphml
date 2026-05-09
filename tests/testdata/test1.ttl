@@ -3,6 +3,7 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix rel: <http://www.perceive.net/schemas/relationship/> .
+@prefix rdf2graphml: <https://www.hedenus.de/rdf2graphml/> .
 
 
 <a> a foaf:Person;
@@ -19,7 +20,13 @@
     foaf:knows <a> .
 
 
-
-
-
-
+<c> a foaf:Person ;
+    rdfs:label "Chris" ;
+    foaf:knows <b> ;
+    rdf2graphml:color "#FF0000" ;
+    rdf2graphml:shape "rectangle" ;
+    foaf:knows [
+        a rdf2graphml:Link ;
+        rdfs:label "Somebody" ;
+        rdf:value "https://www.hedenus.de"
+        ] .

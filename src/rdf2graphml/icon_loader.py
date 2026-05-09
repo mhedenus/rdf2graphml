@@ -8,6 +8,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+import re
 from pathlib import Path
 
 from PIL import Image
@@ -106,7 +107,23 @@ def load_icon_as_base64(source, is_local=False, target_height=64, base_dir=None)
     """
     Main function: Loads an image (with cache, backoff, and cookies), scales it, and encodes it.
     If is_local=True, source is resolved relative to base_dir.
+    Supports data URIs directly.
     """
+    if source.startswith("data:image/"):
+        # Match standard data URL format: data:image/png;base64,iVBORw0KGgo...
+        match = re.match(r"data:image/[a-zA-Z]+;base64,(.+)", source)
+        if match:
+            b64_data = match.group(1)
+            try:
+                image_data = base64.b64decode(b64_data)
+                return _scale_and_encode(image_data, target_height)
+            except Exception as e:
+                logger.error(f"Error decoding data URI: {e}")
+                return None, None
+        else:
+            logger.warning("Unsupported or invalid data URI format.")
+            return None, None
+
     _init_cache()
 
     # Load image (local or via download)
