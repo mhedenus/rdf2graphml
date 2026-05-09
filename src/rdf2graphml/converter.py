@@ -33,7 +33,7 @@ class RDFToYedConverter:
         self.node_display_labels_raw: Dict[Node, List[Tuple[str, Optional[str]]]] = {}
         self.node_values: Dict[Node, str] = {}
         self.node_comments: Dict[Node, str] = {}
-        self.effective_styles: Dict[Node, Dict[str, Any]] = {}
+        self.node_effective_style: Dict[Node, Dict[str, Any]] = {}
         self.image_resources: Dict[str, Dict[str, Any]] = {}
         self.all_attribute_keys: Set[str] = set()
         self.edge_counter: int = 0
@@ -142,17 +142,17 @@ class RDFToYedConverter:
             elif p == RDFS.comment:
                 self.node_comments[s] = str(o)
             elif p in self.config.icon_locators:
-                if s not in self.effective_styles:
-                    self.effective_styles[s] = {}
-                self.effective_styles[s]["icon"] = str(o)
+                if s not in self.node_effective_style:
+                    self.node_effective_style[s] = {}
+                self.node_effective_style[s]["icon"] = str(o)
             elif p == RDF2GRAPHML_COLOR:
-                if s not in self.effective_styles:
-                    self.effective_styles[s] = {}
-                self.effective_styles[s]["color"] = str(o)
+                if s not in self.node_effective_style:
+                    self.node_effective_style[s] = {}
+                self.node_effective_style[s]["color"] = str(o)
             elif p == RDF2GRAPHML_SHAPE:
-                if s not in self.effective_styles:
-                    self.effective_styles[s] = {}
-                self.effective_styles[s]["shape"] = str(o)
+                if s not in self.node_effective_style:
+                    self.node_effective_style[s] = {}
+                self.node_effective_style[s]["shape"] = str(o)
             elif p == RDF.type:
                 if s not in self.node_types: self.node_types[s] = []
                 self.node_types[s].append(o)
@@ -195,15 +195,15 @@ class RDFToYedConverter:
         """
         Resolves the final effective style for each node drawn in the graph.
         Priority:
-        1. Custom properties defined directly on the node (icon_locator, shape, color) already in self.effective_styles
+        1. Custom properties defined directly on the node (icon_locator, shape, color)
         2. Style from the RDF type (type_styles)
         3. Default style
         """
         for node in self.nodes_to_draw:
-            if node not in self.effective_styles:
-                self.effective_styles[node] = {}
+            if node not in self.node_effective_style:
+                self.node_effective_style[node] = {}
 
-            node_style = self.effective_styles[node]
+            node_style = self.node_effective_style[node]
             best_type_style = self._get_best_node_style(node) or {}
 
             if isinstance(node, BNode):
@@ -260,7 +260,7 @@ class RDFToYedConverter:
     def _fetch_images(self) -> None:
         resource_id = 1
         seen_sources: Dict[str, Dict[str, Any]] = {}
-        for style in self.effective_styles.values():
+        for style in self.node_effective_style.values():
             if "icon" in style:
                 src = style["icon"]
                 is_local = not src.startswith(("http://", "https://"))
@@ -408,7 +408,7 @@ class RDFToYedConverter:
         return False
 
     def _apply_standard_styling(self, data_g: ET.Element, node: Node, disp_label: str, is_link: bool) -> None:
-        style = self.effective_styles.get(node, {})
+        style = self.node_effective_style.get(node, {})
         icon_src = style.get("icon")
 
         if icon_src and icon_src in self.image_resources:
