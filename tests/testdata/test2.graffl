@@ -1,0 +1,3 @@
+@ use rdf2graphml
+
+Person icon tests/icons/Person.svg

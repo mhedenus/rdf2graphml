@@ -32,8 +32,6 @@ def _get_cache_key(source, target_height):
 
 
 # --- Set up global cookie management ---
-# We build an "opener" that automatically collects and sends cookies with every request.
-# This is crucial to bypass session-based rate limiting (bot protection).
 cookie_jar = http.cookiejar.CookieJar()
 cookie_processor = urllib.request.HTTPCookieProcessor(cookie_jar)
 opener = urllib.request.build_opener(cookie_processor)
@@ -45,24 +43,19 @@ def _download_with_backoff(url, max_wait=20):
     Uses cookies and browser headers to avoid bot blocking.
     """
     total_waited = 0
-    current_delay = 2.0  # Initial value for exponential backoff in seconds
+    current_delay = 2.0
 
-    # Extended headers to avoid triggering WAFs (Cloudflare etc.)
     browser_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.9',
     }
 
-    # BRAKE: We wait a flat 1 second before EVERY new download
-    # so that we don't trigger the server's rate limit in the first place.
     time.sleep(1)
 
     while True:
         try:
             req = urllib.request.Request(url, headers=browser_headers)
-
-            # We use the opener with the integrated CookieJar instead of urlopen
             with opener.open(req, timeout=10) as response:
                 return response.read()
 
@@ -75,7 +68,7 @@ def _download_with_backoff(url, max_wait=20):
                 logger.warning(f"HTTP {e.code}. Server is blocking. Waiting {current_delay}s before retrying {url}...")
                 time.sleep(current_delay)
                 total_waited += current_delay
-                current_delay *= 2  # Double the wait time on the next attempt
+                current_delay *= 2
             else:
                 logger.error(f"HTTP error {e.code} while loading {url}")
                 return None
@@ -88,6 +81,21 @@ def _download_with_backoff(url, max_wait=20):
 def _scale_and_encode(image_bytes, target_height):
     """Scales an image proportionally to target_height and returns (Base64-PNG, target_width)."""
     try:
+        if b"<svg" in image_bytes[:1024].lower():
+            try:
+                from resvg import render, usvg
+                from affine import Affine
+
+                svg_string = image_bytes.decode('utf-8', errors='ignore')
+                tree = usvg.Tree.from_str(svg_string, usvg.Options.default())
+
+                tr = Affine.identity()
+                image_bytes = bytes(render(tree, tr[0:6]))
+
+            except Exception as e:
+                logger.error(f"Failed to convert SVG: {e}")
+                return None, None
+
         with Image.open(io.BytesIO(image_bytes)) as img:
             aspect_ratio = img.width / img.height
             target_width = int(target_height * aspect_ratio)
@@ -110,8 +118,8 @@ def load_icon_as_base64(source, is_local=False, target_height=64, base_dir=None)
     Supports data URIs directly.
     """
     if source.startswith("data:image/"):
-        # Match standard data URL format: data:image/png;base64,iVBORw0KGgo...
-        match = re.match(r"data:image/[a-zA-Z]+;base64,(.+)", source)
+        # Match standard data URL format (angepasst für "+xml" wie in data:image/svg+xml)
+        match = re.match(r"data:image/[a-zA-Z0-9\+\-\.]+;base64,(.+)", source)
         if match:
             b64_data = match.group(1)
             try:
@@ -130,7 +138,6 @@ def load_icon_as_base64(source, is_local=False, target_height=64, base_dir=None)
     if is_local:
         path = Path(source)
 
-        # Prepend base_dir to the path if it is a relative path
         if base_dir and not path.is_absolute():
             path = Path(base_dir) / path
 
