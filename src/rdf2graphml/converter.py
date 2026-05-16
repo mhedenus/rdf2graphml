@@ -10,7 +10,7 @@ from rdflib.term import Node
 
 from .config import ConverterConfig
 from .hierarchy import GraphHierarchy
-from .icon_loader import load_icon_as_base64
+from .icon_loader import IconLoader
 from .model import RDF2GRAPHML_NS_BASE, RDF2GRAPHML_COLOR, RDF2GRAPHML_SHAPE, RDF2GRAPHML_LINK
 
 logger = logging.getLogger(__name__)
@@ -40,6 +40,7 @@ class GraphMLNode:
 class RDFToYedConverter:
     def __init__(self, config: ConverterConfig) -> None:
         self.config = config
+        self.icon_loader = IconLoader()
         self.root: ET.Element = ET.Element("graphml", {"xmlns": "http://graphml.graphdrawing.org/xmlns"})
         self.graph_element: ET.Element = ET.SubElement(self.root, "graph", id="G", edgedefault="directed")
 
@@ -259,7 +260,7 @@ class RDFToYedConverter:
                 is_local = not src.startswith(("http://", "https://"))
                 if src not in seen_sources:
                     logger.debug(f"Processing image: {src}")
-                    result = load_icon_as_base64(
+                    result = self.icon_loader.load_icon_as_base64(
                         src,
                         is_local,
                         self.config.icon_height,
