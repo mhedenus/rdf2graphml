@@ -1,6 +1,7 @@
 import logging
 import textwrap
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
 from typing import Set, Dict, List, Tuple, Any, Optional
 
 from rdflib import Literal, BNode, URIRef, Dataset
@@ -21,6 +22,18 @@ LIST_TYPE_URI: URIRef = URIRef(f"{LIST_NS_BASE}List")
 RDF_CONTAINER_MEMBER = "http://www.w3.org/1999/02/22-rdf-syntax-ns#_"
 
 
+@dataclass
+class GraphMLNode:
+    """Kapselt alle extrahierten Daten und Styles für einen einzelnen RDF-Knoten."""
+    rdf_node: Node
+    types: List[Node] = field(default_factory=list)
+    attributes: Dict[str, List[str]] = field(default_factory=dict)
+    display_labels_raw: List[Tuple[str, Optional[str]]] = field(default_factory=list)
+    value: Optional[str] = None
+    comment: Optional[str] = None
+    effective_style: Dict[str, Any] = field(default_factory=dict)
+
+
 class RDFToYedConverter:
     def __init__(self, config: Any) -> None:
         self.config = config
@@ -28,17 +41,18 @@ class RDFToYedConverter:
         self.graph_element: ET.Element = ET.SubElement(self.root, "graph", id="G", edgedefault="directed")
 
         self.nodes_to_draw: Set[Node] = set()
-        self.node_types: Dict[Node, List[Node]] = {}
-        self.node_attributes: Dict[Node, Dict[str, List[str]]] = {}
-        self.node_display_labels_raw: Dict[Node, List[Tuple[str, Optional[str]]]] = {}
-        self.node_values: Dict[Node, str] = {}
-        self.node_comments: Dict[Node, str] = {}
-        self.node_effective_style: Dict[Node, Dict[str, Any]] = {}
+        self.nodes: Dict[Node, GraphMLNode] = {}  # Zentraler Speicher für alle GraphMLNode Instanzen
+
         self.image_resources: Dict[str, Dict[str, Any]] = {}
         self.all_attribute_keys: Set[str] = set()
         self.edge_counter: int = 0
         self.hierarchy: GraphHierarchy = GraphHierarchy()
 
+    def _get_node(self, node: Node) -> GraphMLNode:
+        """Zentrale Lazy-Initialisierung: Erzeugt die Node-Instanz, falls sie noch nicht existiert."""
+        if node not in self.nodes:
+            self.nodes[node] = GraphMLNode(rdf_node=node)
+        return self.nodes[node]
 
     def _generate_unique_attr_names(self, uris: Set[str]) -> Dict[str, str]:
         used_names: Dict[str, int] = {}
@@ -76,8 +90,6 @@ class RDFToYedConverter:
                     for o in rdf_graph.objects(subject=current, predicate=p):
                         triples_to_remove.append((current, p, o))
 
-                # if the list is in a Group, then the following bnodes of the list must be removed
-                # from the group, otherwise they will appear as separate nodes
                 if rest_val != RDF.nil:
                     for s in rdf_graph.subjects(object=rest_val, predicate=self.config.group_contains):
                         triples_to_remove.append((s, self.config.group_contains, rest_val))
@@ -128,34 +140,27 @@ class RDFToYedConverter:
 
     def _extract_node_properties(self, allowed_triples: List[Tuple[Node, Node, Node]]) -> None:
         for s, p, o in allowed_triples:
+            s_node = self._get_node(s)
+
             if p in self.config.node_properties or p in self.config.icon_locators or (
                     p == RDF.type and not self.config.type_as_edge) or p == RDF2GRAPHML_COLOR or p == RDF2GRAPHML_SHAPE:
                 self.nodes_forced_as_attributes.add(o)
 
             if p == RDFS.label and isinstance(o, Literal):
-                if s not in self.node_display_labels_raw:
-                    self.node_display_labels_raw[s] = []
                 lang = o.language if hasattr(o, 'language') else None
-                self.node_display_labels_raw[s].append((str(o), lang))
+                s_node.display_labels_raw.append((str(o), lang))
             elif p == RDF.value:
-                self.node_values[s] = str(o)
+                s_node.value = str(o)
             elif p == RDFS.comment:
-                self.node_comments[s] = str(o)
+                s_node.comment = str(o)
             elif p in self.config.icon_locators:
-                if s not in self.node_effective_style:
-                    self.node_effective_style[s] = {}
-                self.node_effective_style[s]["icon"] = str(o)
+                s_node.effective_style["icon"] = str(o)
             elif p == RDF2GRAPHML_COLOR:
-                if s not in self.node_effective_style:
-                    self.node_effective_style[s] = {}
-                self.node_effective_style[s]["color"] = str(o)
+                s_node.effective_style["color"] = str(o)
             elif p == RDF2GRAPHML_SHAPE:
-                if s not in self.node_effective_style:
-                    self.node_effective_style[s] = {}
-                self.node_effective_style[s]["shape"] = str(o)
+                s_node.effective_style["shape"] = str(o)
             elif p == RDF.type:
-                if s not in self.node_types: self.node_types[s] = []
-                self.node_types[s].append(o)
+                s_node.types.append(o)
 
         for s, p, o in allowed_triples:
             if s not in self.nodes_forced_as_attributes:
@@ -166,20 +171,20 @@ class RDFToYedConverter:
 
             if isinstance(o, Literal) or p in self.config.node_properties or (
                     p == RDF.type and not self.config.type_as_edge):
-                if s not in self.node_attributes:
-                    self.node_attributes[s] = {}
+                s_node = self._get_node(s)
                 p_str = str(p)
                 self.all_attribute_keys.add(p_str)
-                if p_str not in self.node_attributes[s]:
-                    self.node_attributes[s][p_str] = []
+                if p_str not in s_node.attributes:
+                    s_node.attributes[p_str] = []
 
                 val_str = f"{o} (@{o.language})" if getattr(o, "language", None) else str(o)
-                self.node_attributes[s][p_str].append(val_str)
+                s_node.attributes[p_str].append(val_str)
             elif o not in self.nodes_forced_as_attributes:
                 self.nodes_to_draw.add(o)
 
     def _get_best_node_style(self, node: Node) -> Optional[Dict[str, Any]]:
-        types = sorted(self.node_types.get(node, []), key=str)
+        g_node = self._get_node(node)
+        types = sorted(g_node.types, key=str)
         best_style = None
         best_priority = -1
         for t in types:
@@ -192,18 +197,9 @@ class RDFToYedConverter:
         return best_style
 
     def _resolve_effective_styles(self) -> None:
-        """
-        Resolves the final effective style for each node drawn in the graph.
-        Priority:
-        1. Custom properties defined directly on the node (icon_locator, shape, color)
-        2. Style from the RDF type (type_styles)
-        3. Default style
-        """
         for node in self.nodes_to_draw:
-            if node not in self.node_effective_style:
-                self.node_effective_style[node] = {}
-
-            node_style = self.node_effective_style[node]
+            g_node = self._get_node(node)
+            node_style = g_node.effective_style
             best_type_style = self._get_best_node_style(node) or {}
 
             if isinstance(node, BNode):
@@ -211,24 +207,19 @@ class RDFToYedConverter:
             else:
                 default_style = self.config.default_node_style.get("uri_nodes", {})
 
-            if "icon" not in node_style:
-                if "icon" in best_type_style:
-                    node_style["icon"] = best_type_style["icon"]
+            if "icon" not in node_style and "icon" in best_type_style:
+                node_style["icon"] = best_type_style["icon"]
 
             if "color" not in node_style:
-                if "color" in best_type_style:
-                    node_style["color"] = best_type_style["color"]
-                else:
-                    node_style["color"] = default_style.get("color", "#E8EEF7")
+                node_style["color"] = best_type_style.get("color", default_style.get("color", "#E8EEF7"))
 
             if "shape" not in node_style:
-                if "shape" in best_type_style:
-                    node_style["shape"] = best_type_style["shape"]
-                else:
-                    node_style["shape"] = default_style.get("shape", "roundrectangle")
+                node_style["shape"] = best_type_style.get("shape", default_style.get("shape", "roundrectangle"))
 
     def _get_display_label(self, node: Node, rdf_graph: Dataset) -> str:
-        labels = self.node_display_labels_raw.get(node, [])
+        g_node = self._get_node(node)
+        labels = g_node.display_labels_raw
+
         if labels:
             pref_lang = self.config.preferred_language
             pref_labels = [text for text, lang in labels if lang == pref_lang]
@@ -240,11 +231,9 @@ class RDFToYedConverter:
                 return sorted(no_lang_labels)[0]
 
             return sorted([text for text, lang in labels])[0]
-
         else:
-            value = self.node_values.get(node)
-            if value:
-                return value
+            if g_node.value:
+                return g_node.value
             else:
                 if isinstance(node, BNode):
                     return ""
@@ -260,7 +249,8 @@ class RDFToYedConverter:
     def _fetch_images(self) -> None:
         resource_id = 1
         seen_sources: Dict[str, Dict[str, Any]] = {}
-        for style in self.node_effective_style.values():
+        for g_node in self.nodes.values():
+            style = g_node.effective_style
             if "icon" in style:
                 src = style["icon"]
                 is_local = not src.startswith(("http://", "https://"))
@@ -305,7 +295,7 @@ class RDFToYedConverter:
         realizers = ET.SubElement(proxy, "{http://www.yworks.com/xml/graphml}Realizers", active="0")
         group_node = ET.SubElement(realizers, "{http://www.yworks.com/xml/graphml}GroupNode")
 
-        style = self.node_effective_style.get(node, {})
+        style = self._get_node(node).effective_style
         color = style.get("color", "#EEEEEE")
 
         ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
@@ -330,7 +320,6 @@ class RDFToYedConverter:
             return "", "30", "30"
 
         normalized_label = " ".join(label.split())
-
         lines = textwrap.wrap(normalized_label, width=max_width_chars)
         formatted_label = "\n".join(lines)
 
@@ -353,14 +342,12 @@ class RDFToYedConverter:
         url = n_id
         is_link = False
 
-        # special handling for Link-Nodes: use rdf:value as URL
-        types = self.node_types.get(node, [])
-        if types and RDF2GRAPHML_LINK in types:
+        g_node = self._get_node(node)
+
+        if RDF2GRAPHML_LINK in g_node.types:
             is_link = True
-            if isinstance(node, BNode):
-                href = self.node_values.get(node, None)
-                if href:
-                    url = href
+            if isinstance(node, BNode) and g_node.value:
+                url = g_node.value
 
         node_elem = ET.SubElement(parent_xml_element, "node", id=n_id)
         ET.SubElement(node_elem, "data", key="d_url").text = url
@@ -369,8 +356,7 @@ class RDFToYedConverter:
         self._add_node_attributes(node, node_elem, attr_map)
 
         data_g = ET.SubElement(node_elem, "data", key="d_ng")
-        raw_label = self._get_display_label(node, rdf_graph)
-        disp_label = raw_label
+        disp_label = self._get_display_label(node, rdf_graph)
 
         if node in self.hierarchy.groups:
             self._apply_group_styling(node, data_g, disp_label)
@@ -383,35 +369,30 @@ class RDFToYedConverter:
             self._apply_node_styling(data_g, node, disp_label, is_link)
 
     def _add_node_tooltip(self, node: Node, node_elem: ET.Element) -> None:
-        if node in self.node_comments:
-            comment_text = self.node_comments[node]
-            html_tooltip = f"<html><body>{comment_text}</body></html>"
+        tooltip_text = self._get_node(node).comment
+        if not tooltip_text:
+            tooltip_text = self._get_node(node).value
+        if tooltip_text:
+            html_tooltip = f"<html><body>{tooltip_text}</body></html>"
             ET.SubElement(node_elem, "data", key="d_desc").text = html_tooltip
 
     def _add_node_attributes(self, node: Node, node_elem: ET.Element, attr_map: Dict[str, str]) -> None:
-        if node in self.node_attributes:
-            for p_uri in sorted(self.node_attributes[node].keys()):
-                vals = self.node_attributes[node][p_uri]
+        attributes = self._get_node(node).attributes
+        if attributes:
+            for p_uri in sorted(attributes.keys()):
+                vals = attributes[p_uri]
                 ET.SubElement(node_elem, "data", key=attr_map[p_uri]).text = ", ".join(sorted(vals))
 
     def _apply_node_styling(self, data_g: ET.Element, node: Node, disp_label: str, is_link: bool) -> None:
-        """
-        Delegates styling to specific builders based on node type.
-        Can be extended in the future to register custom builders for specific RDF types.
-        """
         if self._apply_custom_type_styling(data_g, node, disp_label, is_link):
             return
-
         self._apply_standard_styling(data_g, node, disp_label, is_link)
 
     def _apply_custom_type_styling(self, data_g: ET.Element, node: Node, disp_label: str, is_link: bool) -> bool:
-        # types = self.node_types.get(node, [])
-        # if RDF2GRAPHML_LINK in types:
-        # return True
         return False
 
     def _apply_standard_styling(self, data_g: ET.Element, node: Node, disp_label: str, is_link: bool) -> None:
-        style = self.node_effective_style.get(node, {})
+        style = self._get_node(node).effective_style
         icon_src = style.get("icon")
 
         if icon_src and icon_src in self.image_resources:
@@ -539,14 +520,6 @@ class RDFToYedConverter:
             return p_str.split("/")[-1].split("#")[-1] or "link"
 
     def convert(self, rdf_graph: Dataset) -> None:
-        """
-        Converts the provided RDF graph to GraphML.
-
-        WARNING: This method modifies the provided rdflib.Dataset in-place
-        (e.rdf_graph., when resolving RDF lists during preprocessing). If you need
-        to preserve the original state of the graph, pass a copy instead.
-        """
-
         for prefix, uri in self.config.namespaces.items():
             rdf_graph.bind(prefix, Namespace(uri), override=True)
 
