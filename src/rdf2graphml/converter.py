@@ -8,18 +8,21 @@ from rdflib import Literal, BNode, URIRef, Dataset
 from rdflib.namespace import RDFS, RDF, Namespace
 from rdflib.term import Node
 
+from .config import ConverterConfig
 from .hierarchy import GraphHierarchy
 from .icon_loader import load_icon_as_base64
 from .model import RDF2GRAPHML_NS_BASE, RDF2GRAPHML_COLOR, RDF2GRAPHML_SHAPE, RDF2GRAPHML_LINK
 
 logger = logging.getLogger(__name__)
 
-# --- Constants for RDF List processing ---
+# --- Constants ---
 LIST_NS_BASE: str = RDF2GRAPHML_NS_BASE
 LIST_NS_INDEX: str = f"{LIST_NS_BASE}index#"
 LIST_TYPE_URI: URIRef = URIRef(f"{LIST_NS_BASE}List")
-
 RDF_CONTAINER_MEMBER = "http://www.w3.org/1999/02/22-rdf-syntax-ns#_"
+
+# yEd XML Namespace
+YED_NS = "{http://www.yworks.com/xml/graphml}"
 
 
 @dataclass
@@ -35,7 +38,7 @@ class GraphMLNode:
 
 
 class RDFToYedConverter:
-    def __init__(self, config: Any) -> None:
+    def __init__(self, config: ConverterConfig) -> None:
         self.config = config
         self.root: ET.Element = ET.Element("graphml", {"xmlns": "http://graphml.graphdrawing.org/xmlns"})
         self.graph_element: ET.Element = ET.SubElement(self.root, "graph", id="G", edgedefault="directed")
@@ -291,28 +294,27 @@ class RDFToYedConverter:
         return mapping
 
     def _apply_group_styling(self, node: Node, data_g: ET.Element, disp_label: str) -> None:
-        proxy = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ProxyAutoBoundsNode")
-        realizers = ET.SubElement(proxy, "{http://www.yworks.com/xml/graphml}Realizers", active="0")
-        group_node = ET.SubElement(realizers, "{http://www.yworks.com/xml/graphml}GroupNode")
+        proxy = ET.SubElement(data_g, f"{YED_NS}ProxyAutoBoundsNode")
+        realizers = ET.SubElement(proxy, f"{YED_NS}Realizers", active="0")
+        group_node = ET.SubElement(realizers, f"{YED_NS}GroupNode")
 
         style = self._get_node(node).effective_style
         color = style.get("color", "#EEEEEE")
 
-        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
+        ET.SubElement(group_node, f"{YED_NS}NodeLabel",
                       alignment="right", autoSizePolicy="node_size", backgroundColor=f"{color}",
                       borderDistance="0.0", fontFamily="Dialog", fontSize="15", fontStyle="plain",
                       hasLineColor="false", modelName="internal", modelPosition="t",
                       textColor="#000000", visible="true").text = disp_label
 
-        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Fill", color="#F5F5F5", transparent="false")
-        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}BorderStyle", color="#000000", type="dashed",
-                      width="1.0")
-        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Shape", type="roundrectangle")
-        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}State", closed="false", closedHeight="50.0",
+        ET.SubElement(group_node, f"{YED_NS}Fill", color="#F5F5F5", transparent="false")
+        ET.SubElement(group_node, f"{YED_NS}BorderStyle", color="#000000", type="dashed", width="1.0")
+        ET.SubElement(group_node, f"{YED_NS}Shape", type="roundrectangle")
+        ET.SubElement(group_node, f"{YED_NS}State", closed="false", closedHeight="50.0",
                       closedWidth="50.0", innerGraphDisplayEnabled="false")
-        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}Insets", bottom="15", bottomF="30.0", left="30",
+        ET.SubElement(group_node, f"{YED_NS}Insets", bottom="15", bottomF="30.0", left="30",
                       leftF="30.0", right="30", rightF="30.0", top="30", topF="30.0")
-        ET.SubElement(group_node, "{http://www.yworks.com/xml/graphml}BorderInsets", bottom="0", bottomF="0.0",
+        ET.SubElement(group_node, f"{YED_NS}BorderInsets", bottom="0", bottomF="0.0",
                       left="0", leftF="0.0", right="0", rightF="0.0", top="0", topF="0.0")
 
     def _format_and_measure_label(self, label: str, max_width_chars: int = 40) -> Tuple[str, str, str]:
@@ -402,31 +404,31 @@ class RDFToYedConverter:
 
     def _build_image_node(self, data_g: ET.Element, disp_label: str, icon_src: str, is_link: bool) -> None:
         img_data = self.image_resources[icon_src]
-        img_node = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ImageNode")
-        ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}Geometry",
+        img_node = ET.SubElement(data_g, f"{YED_NS}ImageNode")
+        ET.SubElement(img_node, f"{YED_NS}Geometry",
                       height=str(self.config.icon_height), width=str(img_data["width"]))
-        ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}NodeLabel",
+        ET.SubElement(img_node, f"{YED_NS}NodeLabel",
                       modelName="sandwich", modelPosition="s").text = disp_label
-        ET.SubElement(img_node, "{http://www.yworks.com/xml/graphml}Image", refid=str(img_data["id"]))
+        ET.SubElement(img_node, f"{YED_NS}Image", refid=str(img_data["id"]))
 
     def _build_shape_node(self, data_g: ET.Element, node: Node, disp_label: str, style: Dict[str, Any],
                           is_link: bool) -> None:
-        shape_n = ET.SubElement(data_g, "{http://www.yworks.com/xml/graphml}ShapeNode")
+        shape_n = ET.SubElement(data_g, f"{YED_NS}ShapeNode")
 
         color = style.get("color", "#E8EEF7")
         shape = style.get("shape", "roundrectangle")
 
         formatted_label, width, height = self._format_and_measure_label(disp_label)
 
-        node_label = ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}NodeLabel")
+        node_label = ET.SubElement(shape_n, f"{YED_NS}NodeLabel")
         node_label.text = formatted_label
         node_label.set("alignment", "center")
         if is_link:
             node_label.set("underlinedText", "true")
 
-        ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Geometry", width=width, height=height)
-        ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Fill", color=color, transparent="false")
-        ET.SubElement(shape_n, "{http://www.yworks.com/xml/graphml}Shape", type=shape)
+        ET.SubElement(shape_n, f"{YED_NS}Geometry", width=width, height=height)
+        ET.SubElement(shape_n, f"{YED_NS}Fill", color=color, transparent="false")
+        ET.SubElement(shape_n, f"{YED_NS}Shape", type=shape)
 
     def _pass_2_build_graph(self, rdf_graph: Dataset, attr_map: Dict[str, str]) -> None:
         self._build_nodes(rdf_graph, attr_map)
@@ -480,8 +482,7 @@ class RDFToYedConverter:
         edge = ET.SubElement(self.graph_element, "edge", id=f"e{self.edge_counter}", source=s_str, target=o_str)
         self.edge_counter += 1
         ET.SubElement(edge, "data", key="d_e_url").text = p_str
-        poly = ET.SubElement(ET.SubElement(edge, "data", key="d_eg"),
-                             "{http://www.yworks.com/xml/graphml}PolyLineEdge")
+        poly = ET.SubElement(ET.SubElement(edge, "data", key="d_eg"), f"{YED_NS}PolyLineEdge")
 
         p_uri = URIRef(p_str)
         edge_style = self.config.edge_styles.get(p_uri, {})
@@ -492,10 +493,8 @@ class RDFToYedConverter:
 
         source_arrow = target_arrow if is_bidi and target_arrow != "none" else "none"
 
-        ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}LineStyle",
-                      color=color, type=line_type, width=line_width)
-        ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}Arrows",
-                      source=source_arrow, target=target_arrow)
+        ET.SubElement(poly, f"{YED_NS}LineStyle", color=color, type=line_type, width=line_width)
+        ET.SubElement(poly, f"{YED_NS}Arrows", source=source_arrow, target=target_arrow)
 
         custom_label = edge_style.get("label")
         if custom_label:
@@ -503,7 +502,7 @@ class RDFToYedConverter:
         else:
             edge_label = self._determine_edge_label(p_str, rdf_graph)
 
-        ET.SubElement(poly, "{http://www.yworks.com/xml/graphml}EdgeLabel").text = edge_label
+        ET.SubElement(poly, f"{YED_NS}EdgeLabel").text = edge_label
 
     def _determine_edge_label(self, p_str: str, rdf_graph: Dataset) -> str:
         if p_str.startswith(LIST_NS_INDEX):
@@ -531,9 +530,9 @@ class RDFToYedConverter:
 
         if self.image_resources:
             res_data = ET.SubElement(self.root, "data", key="d_res")
-            y_res = ET.SubElement(res_data, "{http://www.yworks.com/xml/graphml}Resources")
+            y_res = ET.SubElement(res_data, f"{YED_NS}Resources")
             for res in self.image_resources.values():
-                r = ET.SubElement(y_res, "{http://www.yworks.com/xml/graphml}Resource", id=str(res["id"]),
+                r = ET.SubElement(y_res, f"{YED_NS}Resource", id=str(res["id"]),
                                   type="java.awt.image.BufferedImage")
                 r.text = res["base64"]
 
