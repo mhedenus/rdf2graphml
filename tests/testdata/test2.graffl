@@ -2,4 +2,4 @@
 
 Person icon tests/icons/Person.svg
 
-r1 : Requirement = "What do do!"
+(r1) : Requirement label "This is my <b>looooooooooooooooooooooooooooooong</b> and complicated requirement"

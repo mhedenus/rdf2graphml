@@ -318,9 +318,21 @@ class RDFToYedConverter:
         ET.SubElement(group_node, f"{YED_NS}BorderInsets", bottom="0", bottomF="0.0",
                       left="0", leftF="0.0", right="0", rightF="0.0", top="0", topF="0.0")
 
-    def _format_and_measure_label(self, label: str, max_width_chars: int = 40) -> Tuple[str, str, str]:
+    def _format_and_measure_label(self, label: str) -> Tuple[str, str, str]:
+        layout = self.config.label_layout
+        max_width_chars = layout.get("max_width_chars", 32)
+        char_width = layout.get("char_width", 8)
+        line_height = layout.get("line_height", 16)
+        padding_x = layout.get("padding_x", 8)
+        padding_y = layout.get("padding_y", 8)
+
+        min_width = 1 * char_width + padding_x
+        min_height = line_height + padding_y
+
         if not label:
-            return "", "30", "30"
+            return "", f"{min_width}", f"{min_height}"
+
+
 
         normalized_label = " ".join(label.split())
         lines = textwrap.wrap(normalized_label, width=max_width_chars)
@@ -329,13 +341,8 @@ class RDFToYedConverter:
         num_lines = len(lines)
         max_line_length = max((len(line) for line in lines), default=0)
 
-        char_width = 8
-        line_height = 16
-        padding_x = 24
-        padding_y = 16
-
-        width = max(50, (max_line_length * char_width) + padding_x)
-        height = max(30, (num_lines * line_height) + padding_y)
+        width = max(min_width, (max_line_length * char_width) + padding_x)
+        height = max(min_height, (num_lines * line_height) + padding_y)
 
         return formatted_label, str(width), str(height)
 

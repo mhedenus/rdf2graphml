@@ -56,6 +56,14 @@ class ConverterConfig:
         """
         d = self._raw_data
 
+        self.label_layout: Dict[str, int] = d.get("label_layout", {
+            "max_width_chars": 40,
+            "char_width": 8,
+            "line_height": 16,
+            "padding_x": 16,
+            "padding_y": 16
+        })
+
         self.default_node_style: Dict[str, Dict[str, str]] = d.get("default_node_style", {})
 
         self.edge_styles: Dict[URIRef, Dict[str, Any]] = {

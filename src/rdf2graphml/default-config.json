@@ -1,4 +1,11 @@
 {
+  "label_layout": {
+    "max_width_chars": 32,
+    "char_width": 8,
+    "line_height": 16,
+    "padding_x": 8,
+    "padding_y": 8
+  },
   "default_node_style": {
     "blank_nodes": {
       "color": "#C0C0C0",
