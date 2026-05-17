@@ -11,7 +11,7 @@ If you do not have a model or ontology you can specify a JSON configuration file
 
 ## Usage
 
-    rdf2graphml [-h] [-V] [-v] [--type_as_edge] [-m MODEL] [-c CONFIG] -o OUTPUT inputs [inputs ...] 
+    [-h] [-V] [-v] [--base_dir BASE_DIR] [--type_as_edge] [-m MODEL] [-c CONFIG] -o OUTPUT [inputs ...]
 
 If you use `-m` and `-c` option, the JSON configuration will be loaded first. The model
 properties will then overwrite the JSON configuration.
@@ -55,7 +55,6 @@ Annotating a model or ontology is simple, just add the layout properties to your
     "schema": "http://schema.org/",
     "rdf2": "https://www.hedenus.de/rdf2graphml/"
   },
-  "base_dir": "./assets/icons",
   "icon_height": 80,
   "preferred_language": "de",
   "type_as_edge": false,
@@ -134,8 +133,6 @@ Annotating a model or ontology is simple, just add the layout properties to your
 * `namespaces` *(object)*: A dictionary mapping prefixes to namespace URIs. These custom namespaces are registered with
   the converter to generate shorter QName labels (e.g., `ex:Node`) for nodes and edges instead of full URIs. Overrides
   existing prefixes in the source graph.
-* `base_dir` *(string)*: The base directory used to resolve local image paths specified by `icon_locators`. Defaults to
-  the directory of the configuration file.
 * `icon_height` *(integer)*: The target height in pixels for downloaded/loaded icons. The width is scaled proportionally
   using Lanczos resampling. Default: `64`.
 * `preferred_language` *(string)*: The language tag used to pick the primary `rdfs:label` for display purposes (e.g.,

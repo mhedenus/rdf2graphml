@@ -23,7 +23,7 @@ class ConverterConfig:
             self._raw_data = json.load(f)
 
         # 2. Standard-Verzeichnis setzen
-        self.image_base_dir: Path = Path.cwd()
+        self.base_dir: Path = Path.cwd()
 
         # 3. Mit übergebenen Argumenten aktualisieren
         if kwargs:
@@ -36,9 +36,6 @@ class ConverterConfig:
         Aktualisiert die Konfiguration programmatisch.
         Beispiel: config.update(type_as_edge=True, icon_height=128)
         """
-        # Falls ein Pfad für base_dir übergeben wurde, diesen separat behandeln
-        if "base_dir" in kwargs:
-            self.image_base_dir = Path(kwargs.pop("base_dir")).resolve()
 
         # Deep Merge für Dicts (z.B. type_styles), sonst einfaches Überschreiben
         for key, value in kwargs.items():
@@ -103,12 +100,6 @@ class ConverterConfig:
         path = Path(file_path).resolve()
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-
-        # Falls base_dir nicht in JSON steht, ist es relativ zur JSON-Datei
-        if "base_dir" in data:
-            data["base_dir"] = (path.parent / data["base_dir"]).resolve()
-        else:
-            data["base_dir"] = path.parent
 
         return cls(**data)
 

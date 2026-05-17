@@ -55,6 +55,8 @@ def test_batch_conversion(ttl_file: Path, json_file: Path):
 
     # 2. Config und Graphen laden
     config = ConverterConfig.from_json(str(json_file))
+    config.base_dir = Path.cwd() / "tests/testdata"
+
 
     g = Dataset()
     g.parse(str(ttl_file), format="turtle")

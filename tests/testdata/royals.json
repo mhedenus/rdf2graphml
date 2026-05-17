@@ -1,6 +1,5 @@
 {
   "preferred_language": "en",
-  "base_dir": "../icons",
   "icon_locators": [
     "http://xmlns.com/foaf/0.1/img"
   ],

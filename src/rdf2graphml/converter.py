@@ -264,7 +264,7 @@ class RDFToYedConverter:
                         src,
                         is_local,
                         self.config.icon_height,
-                        self.config.image_base_dir
+                        self.config.base_dir
                     )
                     if result and isinstance(result, tuple) and len(result) == 2:
                         b64, width = result

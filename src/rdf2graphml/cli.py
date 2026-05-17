@@ -43,6 +43,11 @@ def main():
         help="Enable verbose logging"
     )
     parser.add_argument(
+        "--base_dir",
+        required=False,
+        help="Base dir for resolving relative resource paths"
+    )
+    parser.add_argument(
         "--type_as_edge",
         action="store_true",
         required=False,
@@ -65,8 +70,8 @@ def main():
     )
     parser.add_argument(
         "inputs",
-        nargs="+",
-        help="One or more RDF files to read"
+        nargs="*",
+        help="The RDF files to read"
     )
 
     args = parser.parse_args()
@@ -84,6 +89,9 @@ def main():
             config = ConverterConfig.from_json(str(config_path))
         else:
             config = ConverterConfig()
+
+        if args.base_dir:
+            config.base_dir = Path(args.base_dir)
 
         if args.model:
             model_graph = Dataset()

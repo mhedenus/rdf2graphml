@@ -1,5 +1,5 @@
 @ use rdf2graphml
 
-Person icon tests/icons/Person.svg
+Person icon "../icons/Person.svg"
 
 (r1) : Requirement label "This is my <b>looooooooooooooooooooooooooooooong</b> and complicated requirement"

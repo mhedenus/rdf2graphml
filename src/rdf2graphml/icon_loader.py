@@ -140,7 +140,7 @@ class IconLoader:
                 path = Path(base_dir) / path
 
             if not path.exists():
-                logger.warning(f"Local image file not found: {path}")
+                logger.error(f"Local image file not found: {path}")
                 return None, None
             try:
                 image_data = path.read_bytes()

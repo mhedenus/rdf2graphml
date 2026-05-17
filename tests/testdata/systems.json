@@ -1,6 +1,5 @@
 {
   "preferred_language": "en",
-  "base_dir": "../icons",
   "icon_height": 46,
   "icon_locators": [
     "http://example.org/sys/icon"
@@ -12,7 +11,7 @@
       "shape": "rectangle"
     },
     "http://example.org/sys/Battery": {
-      "icon": "battery.png",
+      "icon": "../icons/battery.png",
       "priority": 10
     },
     "http://example.org/sys/ConnectionPoint": {
@@ -26,7 +25,7 @@
       "priority": 10
     },
     "http://example.org/sys/BatteryHolder": {
-      "icon": "battery-holder.jpg",
+      "icon": "../icons/battery-holder.jpg",
       "priority": 10
     }
   },
