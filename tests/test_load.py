@@ -5,7 +5,7 @@ from rdflib import Graph, URIRef, Namespace, Literal, Dataset
 from rdflib.namespace import RDF, RDFS
 
 from rdf2graphml.config import ConverterConfig
-from rdf2graphml.converter import RDFToYedConverter
+from rdf2graphml.converter import RDFToGraphModelConverter
 
 EX = Namespace("http://example.org/collatz/")
 
@@ -76,7 +76,7 @@ def test_collatz_load():
             "uri_nodes": {"color": "#FFA500", "shape": "ellipse"}
         }
     )
-    converter = RDFToYedConverter(config)
+    converter = RDFToGraphModelConverter(config)
 
     # 3. Konvertierung
     print("Starte Konvertierung nach GraphML...")

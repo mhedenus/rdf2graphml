@@ -9,8 +9,12 @@ from rdflib import Graph, Dataset
 from rdflib.util import guess_format
 
 from .config import ConverterConfig
-from .converter import RDFToYedConverter
+from .converter import RDFToGraphModelConverter
 from .model_loader import ConfigFromModel
+
+# Import der neuen Writer-Klassen
+from .graphml_writer import GraphMLWriter
+from .drawio_writer import DrawIOWriter
 
 
 def setup_logging(verbose):
@@ -28,7 +32,7 @@ def main():
         __version__ = "unknown (not installed)"
 
     parser = argparse.ArgumentParser(
-        description="Converts RDF files to the yEd GraphML format."
+        description="Converts RDF files to GraphML (yEd) or Draw.io XML format."
     )
 
     parser.add_argument(
@@ -41,6 +45,13 @@ def main():
         "-v", "--verbose",
         action="store_true",
         help="Enable verbose logging"
+    )
+    # NEU: Das Format-Argument
+    parser.add_argument(
+        "-f", "--format",
+        choices=["graphml", "drawio"],
+        default="graphml",
+        help="Output format: 'graphml' (yEd) or 'drawio' (default: graphml)"
     )
     parser.add_argument(
         "--base_dir",
@@ -66,7 +77,7 @@ def main():
     parser.add_argument(
         "-o", "--output",
         required=True,
-        help="Path to the output file (e.g. output.graphml)"
+        help="Path to the output file (e.g. output.graphml or output.drawio)"
     )
     parser.add_argument(
         "inputs",
@@ -106,11 +117,27 @@ def main():
             load_graph(data_graph, Path(input_file), logger)
 
         logger.debug(f"Starting conversion of {len(data_graph)} triples...")
-        converter = RDFToYedConverter(config)
-        converter.convert(data_graph)
-        converter.save(args.output)
 
-        logger.debug(f"Saved to: {args.output}")
+        # 1. Konverter erzeugt NUR NOCH das Intermediate Representation (IR) Modell
+        converter = RDFToGraphModelConverter(config)
+        converter.convert(data_graph)
+
+        if not converter.graph_model:
+            logger.error("Konvertierung fehlgeschlagen: Es wurde kein Graph-Modell erzeugt.")
+            sys.exit(1)
+
+        # 2. Den passenden Writer anhand des CLI-Arguments wählen
+        if args.format == "drawio":
+            writer = DrawIOWriter(config)
+            logger.debug("Nutze DrawIOWriter für die Ausgabe.")
+        else:
+            writer = GraphMLWriter(config)
+            logger.debug("Nutze GraphMLWriter für die Ausgabe.")
+
+        # 3. Das fertig aufgebaute IR-Modell übergeben und in Datei speichern
+        writer.write(converter.graph_model, args.output)
+
+        logger.info(f"Erfolgreich gespeichert unter: {args.output} (Format: {args.format})")
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
@@ -121,6 +148,7 @@ def main():
 _EXTRA_SUFFIX_MAP = {
     ".jsonld": "json-ld",
 }
+
 
 def load_graph(rdf_graph: Dataset, path: Path, logger: logging.Logger, fmt: str = None) -> None:
     if not path.exists():

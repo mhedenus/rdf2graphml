@@ -3,7 +3,7 @@ from pathlib import Path
 from rdflib import Graph, Dataset
 
 from rdf2graphml.config import ConverterConfig
-from rdf2graphml.converter import RDFToYedConverter
+from rdf2graphml.converter import RDFToGraphModelConverter
 
 # Wir ermitteln dynamisch den Pfad zum 'testdata'-Ordner relativ zu dieser Testdatei
 TEST_DATA_DIR = Path(__file__).parent / "testdata"
@@ -62,7 +62,7 @@ def test_batch_conversion(ttl_file: Path, json_file: Path):
     g.parse(str(ttl_file), format="turtle")
 
     # 3. Konvertieren und speichern
-    converter = RDFToYedConverter(config)
+    converter = RDFToGraphModelConverter(config)
     converter.convert(g)
     converter.save(str(output_file))
 
