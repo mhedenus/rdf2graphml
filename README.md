@@ -1,7 +1,8 @@
 # rdf2graphml
 
-Python library for easy converting any __RDF__ to **[GraphML](http://graphml.graphdrawing.org/specification/xsd.html)**
-compatible with **[yEd](https://www.yworks.com/products/yed)**.
+Python library for easy converting any __RDF__ to other formats, like 
+**[GraphML](http://graphml.graphdrawing.org/specification/xsd.html)** compatible with **[yEd](https://www.yworks.com/products/yed)**
+or **[drawio](https://app.diagrams.net)**.
 
 The RDF-to-GraphML conversion is very customizable.
 The basic idea is to extend an existing model or ontology with visualization properties.
@@ -146,14 +147,13 @@ Annotating a model or ontology is simple, just add the layout properties to your
 * `node_properties` *(list of strings)*: A list of URIs. Triples with these predicates are explicitly prevented from
   becoming edges. Instead, their objects are attached to the subject node as GraphML data attributes.
 * `icon_locators` *(list of strings)*: A list of URIs. If a node has one of these predicates, the converter interprets
-  the object as a URL or local file path to an image, downloads/reads it, converts it to Base64, and renders the node as
-  a __yEd__ `ImageNode`.
+  the object as a URL or local file path to an image, downloads and embeds it.
 
 #### Groups & Hierarchies (Nested Graphs)
 
 * `group_type` *(string)*: The URI of the `rdf:type` that identifies a node as a group container.
 * `group_contains` *(string)*: The URI of the predicate used to link a group node to its children. These triples
-  establish the nested graph hierarchy in __yEd__ and will *not* be drawn as visible edges.
+  establish the nested graph hierarchy and will *not* be drawn as visible edges.
 
 #### Styling
 
