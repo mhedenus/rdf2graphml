@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="/*LANG*/">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDF2GraphML - Cytoscape</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #fafafa; }
+        #cy { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+        #controls { 
+            position: absolute; top: 10px; left: 10px; z-index: 10; 
+            background: white; padding: 15px; border-radius: 8px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
+            display: flex; flex-direction: column; gap: 15px;
+            min-width: 260px;
+        }
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        label { font-weight: bold; font-size: 13px; color: #333; }
+        select, input[type="range"] { width: 100%; cursor: pointer; }
+        .spacing-val { font-size: 12px; color: #666; text-align: right; margin-top: -5px; }
+    </style>
+
+    <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+    
+    <script src="https://unpkg.com/elkjs@0.8.2/lib/elk.bundled.js"></script>
+    <script src="https://unpkg.com/cytoscape-elk@2.1.0/dist/cytoscape-elk.js"></script>
+    
+    <script src="https://unpkg.com/webcola@3.4.0/WebCola/cola.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"></script>
+</head>
+<body>
+    <div id="controls">
+        <div class="control-group">
+            <label for="layout-selector" id="lbl-layout">Layout:</label>
+            <select id="layout-selector">
+                <option value="elk" id="opt-elk">ELK (Hierarchical/Orthogonal)</option>
+                <option value="cola" id="opt-cola">Cola (Force-directed)</option>
+            </select>
+        </div>
+        
+        <div class="control-group" id="elk-controls">
+            <label for="elk-spacing-slider" id="lbl-elk-spacing">Node & Layer Spacing (ELK):</label>
+            <input type="range" id="elk-spacing-slider" min="10" max="150" value="40">
+            <div class="spacing-val" id="elk-spacing-val">40 px</div>
+        </div>
+
+        <div class="control-group" id="cola-controls" style="display: none;">
+            <label for="cola-spacing-slider" id="lbl-cola-spacing">Node Spacing (Cola):</label>
+            <input type="range" id="cola-spacing-slider" min="10" max="150" value="50">
+            <div class="spacing-val" id="cola-spacing-val">50 px</div>
+        </div>
+    </div>
+    
+    <div id="cy"></div>
+
+    <script>
+        // 1. Daten und Übersetzungen werden von Python injiziert
+        const graphElements = /*ELEMENTS_JSON*/;
+        const graphStyle = /*STYLE_JSON*/;
+        const i18n = /*I18N_JSON*/;
+
+        // 2. UI-Texte anhand der i18n-Daten setzen (mit Fallback, falls Platzhalter nicht ersetzt wurden)
+        document.getElementById('lbl-layout').innerText = i18n.layout || "Layout:";
+        document.getElementById('opt-elk').innerText = i18n.elk || "ELK (Hierarchical)";
+        document.getElementById('opt-cola').innerText = i18n.cola || "Cola (Force-directed)";
+        document.getElementById('lbl-elk-spacing').innerText = i18n.elk_spacing || "Node Spacing (ELK):";
+        document.getElementById('lbl-cola-spacing').innerText = i18n.cola_spacing || "Node Spacing (Cola):";
+
+        // 3. Konfigurations-Generatoren für die Layouts
+        function getElkLayoutConfig() {
+            const spacing = parseInt(document.getElementById('elk-spacing-slider').value, 10);
+            return {
+                name: 'elk',
+                elk: {
+                    algorithm: 'layered',
+                    'elk.direction': 'DOWN',
+                    'elk.edgeRouting': 'ORTHOGONAL',
+                    'elk.spacing.nodeNode': spacing,
+                    'elk.layered.spacing.nodeNodeBetweenLayers': spacing
+                }
+            };
+        }
+
+        function getColaLayoutConfig() {
+            const spacing = parseInt(document.getElementById('cola-spacing-slider').value, 10);
+            return {
+                name: 'cola',
+                animate: true,
+                randomize: false,
+                maxSimulationTime: 2000,
+                nodeSpacing: spacing,
+                edgeLengthVal: spacing + 20 // Extra Platz für die Kanten berechnen
+            };
+        }
+
+        // 4. Cytoscape initialisieren
+        document.addEventListener('DOMContentLoaded', function() {
+            var cy = cytoscape({
+                container: document.getElementById('cy'),
+                elements: graphElements,
+                style: graphStyle,
+                layout: getElkLayoutConfig() // Startet standardmäßig mit ELK
+            });
+            var currentLayout = null;
+
+            // Tooltips Logik
+            cy.on('mouseover', 'node', function(e){
+                if(e.target.data('tooltip')) {
+                    document.getElementById('cy').setAttribute('title', e.target.data('tooltip'));
+                }
+            });
+            cy.on('mouseout', 'node', function(){ 
+                document.getElementById('cy').removeAttribute('title'); 
+            });
+
+            // Zentrale Funktion zum Ausführen und Wechseln des Layouts
+            function runLayout(layoutName) {
+                if (currentLayout) currentLayout.stop();
+                
+                let config;
+                if(layoutName === 'cola') {
+                    config = getColaLayoutConfig();
+                    // Bei Cola wollen wir weiche, gebogene Kanten
+                    cy.style().selector('edge').style({'curve-style': 'bezier'}).update();
+                    document.getElementById('elk-controls').style.display = 'none';
+                    document.getElementById('cola-controls').style.display = 'flex';
+                } else {
+                    config = getElkLayoutConfig();
+                    // Bei ELK wollen wir orthogonale, abknickende Kanten (wie in yEd)
+                    cy.style().selector('edge').style({'curve-style': 'taxi'}).update();
+                    document.getElementById('cola-controls').style.display = 'none';
+                    document.getElementById('elk-controls').style.display = 'flex';
+                }
+
+                currentLayout = cy.layout(config);
+                currentLayout.run();
+            }
+
+            // --- Event Listeners ---
+            
+            // Dropdown Wechsel
+            document.getElementById('layout-selector').addEventListener('change', function(e) {
+                runLayout(e.target.value);
+            });
+
+            // ELK Slider
+            const elkSlider = document.getElementById('elk-spacing-slider');
+            const elkVal = document.getElementById('elk-spacing-val');
+            
+            elkSlider.addEventListener('input', function(e) {
+                elkVal.innerText = e.target.value + ' px';
+            });
+            elkSlider.addEventListener('change', function() {
+                if (document.getElementById('layout-selector').value === 'elk') runLayout('elk');
+            });
+
+            // Cola Slider
+            const colaSlider = document.getElementById('cola-spacing-slider');
+            const colaVal = document.getElementById('cola-spacing-val');
+            
+            colaSlider.addEventListener('input', function(e) {
+                colaVal.innerText = e.target.value + ' px';
+            });
+            colaSlider.addEventListener('change', function() {
+                if (document.getElementById('layout-selector').value === 'cola') runLayout('cola');
+            });
+        });
+    </script>
+</body>
+</html>
