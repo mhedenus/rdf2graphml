@@ -15,6 +15,7 @@ from .model_loader import ConfigFromModel
 # Import der neuen Writer-Klassen
 from .graphml_writer import GraphMLWriter
 from .drawio_writer import DrawIOWriter
+from .cs_writer import CytoscapeWriter
 
 
 def setup_logging(verbose):
@@ -49,9 +50,9 @@ def main():
     # NEU: Das Format-Argument
     parser.add_argument(
         "-f", "--format",
-        choices=["graphml", "drawio"],
+        choices=["graphml", "drawio", "cs"],
         default="graphml",
-        help="Output format: 'graphml' (yEd) or 'drawio' (default: graphml)"
+        help="Output format: 'graphml' (yEd), 'drawio' or 'cs' (HTML page using Cytoscape.js) (default: graphml)"
     )
     parser.add_argument(
         "--base_dir",
@@ -130,6 +131,9 @@ def main():
         if args.format == "drawio":
             writer = DrawIOWriter(config)
             logger.debug("Nutze DrawIOWriter für die Ausgabe.")
+        elif args.format == "cs":
+            writer = CytoscapeWriter(config)
+            logger.debug("Nutze CytoscapeWriter für die HTML-Ausgabe.")
         else:
             writer = GraphMLWriter(config)
             logger.debug("Nutze GraphMLWriter für die Ausgabe.")
