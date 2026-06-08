@@ -9,6 +9,8 @@
 
 SystemOntology : Ontology
     typeAsEdge false
+    preferredLanguage tlh
+
 
 ---- "Core Types" ----
 

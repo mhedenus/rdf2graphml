@@ -40,16 +40,15 @@ class ConfigFromModel:
                 if str(p).startswith(RDF2GRAPHML_NS_BASE):
                     attr_name = camel_to_snake(str(p).replace(RDF2GRAPHML_NS_BASE, ""))
 
-                    # Update global config attributes with proper type conversion
-                    if attr_name == "preferred_language":
-                        self.config.preferred_language = str(o)
-                    elif attr_name == "icon_height":
+                    if attr_name == "icon_height":
                         try:
                             self.config.icon_height = int(o)
                         except ValueError:
                             logger.warning(f"Invalid iconHeight value for ontology: {o}")
                     elif attr_name == "type_as_edge":
                         self.config.type_as_edge = (str(o).lower() == "true")
+                    else:
+                        setattr(self.config, attr_name, str(o))
 
                     logger.debug(f"Global setting updated from model: {attr_name} = {o}")
 
