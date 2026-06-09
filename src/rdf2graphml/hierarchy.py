@@ -18,14 +18,14 @@ class GraphHierarchy:
 
     def add_relation(self, parent: Node, child: Node) -> None:
         if child in self.parent_of and self.parent_of[child] != parent:
-            logger.warning(f"Knoten {child} ist bereits in einer Gruppe. Ignoriere Zuordnung zu {parent}.")
+            logger.warning(f"Node {child} is already in a group, ignoring assignment to {parent}.")
             return
 
         current = parent
         while current in self.parent_of:
             current = self.parent_of[current]
             if current == child:
-                logger.warning(f"Zyklus erkannt! {parent} -> {child} übersprungen.")
+                logger.warning(f"Cycle detected! Skipped {parent} -> {child}.")
                 return
 
         self.parent_of[child] = parent

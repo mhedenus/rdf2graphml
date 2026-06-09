@@ -59,7 +59,6 @@ class GraphMLWriter(GraphWriter):
             ET.indent(tree, space="  ")
 
         tree.write(str(filepath), encoding="utf-8", xml_declaration=True)
-        logger.debug(f"GraphML erfolgreich nach {filepath} geschrieben.")
 
     def _setup_graphml_keys(self, graph: GraphModel) -> Dict[str, str]:
         """Erzeugt die yEd-spezifischen Metadaten-Keys im XML-Header."""

@@ -49,7 +49,7 @@ class CytoscapeWriter(GraphWriter):
         # HTML Template von der Festplatte laden
         template_path = Path(__file__).parent / "cytoscape-template.html"
         if not template_path.exists():
-            raise FileNotFoundError(f"Das HTML-Template wurde nicht gefunden: {template_path}")
+            raise FileNotFoundError(f"HTML template not found: {template_path}")
 
         with open(template_path, 'r', encoding='utf-8') as f:
             html_content = f.read()
@@ -63,8 +63,6 @@ class CytoscapeWriter(GraphWriter):
         # HTML Datei speichern
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(html_content)
-            
-        logger.debug(f"Cytoscape HTML erfolgreich nach {filepath} geschrieben.")
 
     def _build_elements(self, graph: GraphModel) -> List[Dict[str, Any]]:
         """Konvertiert die Graphendaten in das Cytoscape Element-Array."""

@@ -124,24 +124,24 @@ def main():
         converter.convert(data_graph)
 
         if not converter.graph_model:
-            logger.error("Konvertierung fehlgeschlagen: Es wurde kein Graph-Modell erzeugt.")
+            logger.error("Conversion failed: No graph model was generated.")
             sys.exit(1)
 
         # 2. Den passenden Writer anhand des CLI-Arguments wählen
         if args.format == "drawio":
             writer = DrawIOWriter(config)
-            logger.debug("Nutze DrawIOWriter für die Ausgabe.")
+            logger.debug("Using DrawIOWriter for output.")
         elif args.format == "cs":
             writer = CytoscapeWriter(config)
-            logger.debug("Nutze CytoscapeWriter für die HTML-Ausgabe.")
+            logger.debug("Using CytoscapeWriter for HTML output.")
         else:
             writer = GraphMLWriter(config)
-            logger.debug("Nutze GraphMLWriter für die Ausgabe.")
+            logger.debug("Using GraphMLWriter for output.")
 
         # 3. Das fertig aufgebaute IR-Modell übergeben und in Datei speichern
         writer.write(converter.graph_model, args.output)
 
-        logger.info(f"Erfolgreich gespeichert unter: {args.output} (Format: {args.format})")
+        logger.debug(f"Successfully written to: {args.output} (Format: {args.format})")
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")

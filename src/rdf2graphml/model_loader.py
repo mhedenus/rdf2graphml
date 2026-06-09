@@ -2,7 +2,7 @@ import logging
 import re
 
 import owlrl
-from rdflib import Graph, Namespace, OWL, RDFS, RDF
+from rdflib import Graph, Namespace, OWL, RDFS, RDF, URIRef
 
 from .config import ConverterConfig
 from .model import RDF2GRAPHML_NS_BASE
@@ -47,10 +47,15 @@ class ConfigFromModel:
                             logger.warning(f"Invalid iconHeight value for ontology: {o}")
                     elif attr_name == "type_as_edge":
                         self.config.type_as_edge = (str(o).lower() == "true")
+                    elif attr_name == "group_contains":
+                        self.config.group_contains = URIRef(str(o))
+                    elif attr_name == "group_type":
+                        self.config.group_type = URIRef(str(o))
                     else:
                         setattr(self.config, attr_name, str(o))
+                        logger.debug(f"Global setting updated from model: {attr_name} = {o}")
 
-                    logger.debug(f"Global setting updated from model: {attr_name} = {o}")
+
 
         # 3. Extract structural configurations (Roles / Classes)
 
